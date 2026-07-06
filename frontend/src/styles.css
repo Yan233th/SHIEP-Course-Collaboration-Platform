@@ -441,10 +441,13 @@ a {
   font-weight: 700;
 }
 
-.sidebar .el-collapse-transition-enter-active,
-.sidebar .el-collapse-transition-leave-active,
-.sidebar .collapse-transition {
-  transition: none !important;
+.sidebar .el-menu--inline.el-collapse-transition-enter-active .el-menu-item::before,
+.sidebar .el-menu--inline.el-collapse-transition-enter-active .el-menu-item::after,
+.sidebar .el-menu--inline.el-collapse-transition-enter-active .menu-entry,
+.sidebar .el-menu--inline.el-collapse-transition-leave-active .el-menu-item::before,
+.sidebar .el-menu--inline.el-collapse-transition-leave-active .el-menu-item::after,
+.sidebar .el-menu--inline.el-collapse-transition-leave-active .menu-entry {
+  transition: none;
 }
 
 .sidebar-profile {
