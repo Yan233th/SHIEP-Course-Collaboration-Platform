@@ -13,6 +13,7 @@ import type {
   ResourceItem,
   Session,
   Showcase,
+  Submission,
   UserRow
 } from '../types'
 
@@ -20,6 +21,8 @@ export interface UserQuery {
   keyword?: string
   roleCode?: string
   status?: number
+  pageNum?: number
+  pageSize?: number
 }
 
 export interface CourseQuery {
@@ -30,6 +33,17 @@ export interface CourseQuery {
 export interface CourseMemberPayload {
   userId: number
   roleCode: 'TEACHER' | 'TA' | 'STUDENT'
+  status: number
+}
+
+export interface UserPayload {
+  username: string
+  password?: string
+  realName: string
+  roleCode: 'ADMIN' | 'TEACHER' | 'TA' | 'STUDENT'
+  email?: string
+  phone?: string
+  gender: 'M' | 'F' | 'U'
   status: number
 }
 
@@ -45,6 +59,15 @@ export const userService = {
   },
   getUsers(params: UserQuery) {
     return unwrap<Page<UserRow>>(http.get('/users', { params }))
+  },
+  getUserOptions(params: UserQuery) {
+    return unwrap<Page<UserRow>>(http.get('/users/options', { params }))
+  },
+  createUser(payload: UserPayload) {
+    return unwrap<UserRow>(http.post('/users', payload))
+  },
+  updateUser(id: number, payload: UserPayload) {
+    return unwrap<UserRow>(http.put(`/users/${id}`, payload))
   },
   batchDelete(ids: number[]) {
     return unwrap<void>(http.delete('/users/batch', { data: ids }))
@@ -98,10 +121,13 @@ export const courseService = {
     return unwrap<Assignment>(http.post('/assignments', payload))
   },
   getSubmissions(assignmentId: number) {
-    return unwrap<unknown[]>(http.get('/submissions', { params: { assignmentId } }))
+    return unwrap<Submission[]>(http.get('/submissions', { params: { assignmentId } }))
   },
   createSubmission(payload: Record<string, unknown>) {
-    return unwrap<unknown>(http.post('/submissions', payload))
+    return unwrap<Submission>(http.post('/submissions', payload))
+  },
+  gradeSubmission(id: number, payload: Record<string, unknown>) {
+    return unwrap<Submission>(http.put(`/submissions/${id}/grade`, payload))
   },
   getStats() {
     return unwrap<CourseStats[]>(http.get('/stats/course-overview'))

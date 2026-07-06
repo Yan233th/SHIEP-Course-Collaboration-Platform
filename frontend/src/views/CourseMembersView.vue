@@ -17,7 +17,7 @@
           <el-radio-button label="TA">助教</el-radio-button>
           <el-radio-button label="STUDENT">学生</el-radio-button>
         </el-radio-group>
-        <el-button :icon="Refresh" @click="loadMembers">同步</el-button>
+        <el-button :icon="Refresh" @click="loadMembers">刷新</el-button>
       </div>
 
       <el-table :data="filteredMembers" height="calc(100vh - 292px)" empty-text="暂无课程成员">
@@ -50,8 +50,24 @@
 
     <el-form v-if="canManageMembers" :model="memberForm" label-position="top" class="side-form">
       <h3>{{ editingMember ? '编辑成员' : '添加成员' }}</h3>
-      <el-form-item label="用户ID">
-        <el-input-number v-model="memberForm.userId" :min="1" :disabled="Boolean(editingMember)" />
+      <el-form-item label="用户">
+        <el-select
+          v-model="memberForm.userId"
+          filterable
+          remote
+          clearable
+          :disabled="Boolean(editingMember)"
+          :remote-method="loadUserOptions"
+          :loading="userSearchLoading"
+          placeholder="搜索姓名/账号"
+        >
+          <el-option
+            v-for="user in selectableUsers"
+            :key="user.id"
+            :label="`${user.realName} · ${user.username} · ${roleLabel(user.roleCode)}`"
+            :value="user.id"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="课程身份">
         <el-select v-model="memberForm.roleCode">
@@ -79,13 +95,15 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { courseService } from '../services/platform'
+import { courseService, userService } from '../services/platform'
 import { can, currentCourseId, currentCourseLabel, refreshSignal, roleLabel } from '../state/appState'
-import type { CourseMember } from '../types'
+import type { CourseMember, UserRow } from '../types'
 
 type EditableCourseRole = 'TEACHER' | 'TA' | 'STUDENT'
 
 const members = ref<CourseMember[]>([])
+const userOptions = ref<UserRow[]>([])
+const userSearchLoading = ref(false)
 const keyword = ref('')
 const roleFilter = ref('')
 const editingMember = ref<CourseMember | null>(null)
@@ -96,6 +114,21 @@ const memberForm = reactive({
 })
 
 const canManageMembers = computed(() => can('MANAGE_MEMBERS'))
+const selectableUsers = computed(() => {
+  if (!editingMember.value) return userOptions.value
+  const exists = userOptions.value.some((user) => user.id === editingMember.value?.userId)
+  if (exists) return userOptions.value
+  return [
+    {
+      id: editingMember.value.userId,
+      username: editingMember.value.username,
+      realName: editingMember.value.realName,
+      roleCode: editingMember.value.systemRole || 'STUDENT',
+      status: editingMember.value.status
+    } as UserRow,
+    ...userOptions.value
+  ]
+})
 const filteredMembers = computed(() => {
   const key = keyword.value.trim().toLowerCase()
   return members.value.filter((member) => {
@@ -117,6 +150,17 @@ function roleTagType(role: string) {
 
 async function loadMembers() {
   members.value = await courseService.getMembers(currentCourseId.value)
+}
+
+async function loadUserOptions(keyword = '') {
+  if (!canManageMembers.value) return
+  userSearchLoading.value = true
+  try {
+    const page = await userService.getUserOptions({ keyword, status: 1, pageNum: 1, pageSize: 20 })
+    userOptions.value = page.records
+  } finally {
+    userSearchLoading.value = false
+  }
 }
 
 function editMember(member: CourseMember) {
@@ -162,8 +206,12 @@ async function deleteMember(member: CourseMember) {
 }
 
 onMounted(loadMembers)
+onMounted(() => {
+  void loadUserOptions()
+})
 watch([currentCourseId, refreshSignal], async () => {
   resetForm()
   await loadMembers()
+  await loadUserOptions()
 })
 </script>

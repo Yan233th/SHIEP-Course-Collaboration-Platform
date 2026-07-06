@@ -64,8 +64,10 @@ export interface UserRow {
   id: number
   username: string
   realName: string
-  roleCode: string
+  roleCode: RoleCode
   email?: string
+  phone?: string
+  gender?: 'M' | 'F' | 'U'
   status: number
 }
 
@@ -94,6 +96,19 @@ export interface Assignment {
   description?: string
   dueTime: string
   totalScore: number
+}
+
+export interface Submission {
+  id: number
+  assignmentId: number
+  studentId: number
+  fileId?: number
+  content?: string
+  score?: number
+  feedback?: string
+  status: number
+  createTime?: string
+  updateTime?: string
 }
 
 export interface ProjectGroup {

@@ -41,6 +41,13 @@ public class UserController {
         return Result.ok(userService.pageUsers(query));
     }
 
+    @GetMapping("/options")
+    public Result<PageResult<SysUser>> options(UserQuery query, HttpServletRequest servletRequest) {
+        AccessControl.requireRole(UserContext.from(servletRequest), "ADMIN", "TEACHER");
+        query.setStatus(1);
+        return Result.ok(userService.pageUsers(query));
+    }
+
     @PostMapping
     public Result<SysUser> create(@RequestBody @Valid UserRequest request, HttpServletRequest servletRequest) {
         requireAdmin(servletRequest);

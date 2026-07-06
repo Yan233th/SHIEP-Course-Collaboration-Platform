@@ -525,6 +525,22 @@ a {
   flex-wrap: wrap;
 }
 
+.submission-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.grade-form {
+  padding-top: 4px;
+}
+
+.table-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .muted-panel {
   padding: 14px;
   border: 1px dashed var(--app-border-strong);

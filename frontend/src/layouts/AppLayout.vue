@@ -47,7 +47,7 @@
               />
             </el-select>
             <el-tooltip content="刷新当前页">
-              <el-button :icon="Refresh" @click="triggerRefresh">同步</el-button>
+              <el-button :icon="Refresh" @click="triggerRefresh">刷新</el-button>
             </el-tooltip>
           </div>
           <el-button :icon="SwitchButton" @click="handleLogout">退出</el-button>
