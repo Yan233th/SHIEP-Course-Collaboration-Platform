@@ -1,0 +1,53 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**,/api/users/**,/api/internal-users/**
+          filters:
+            - StripPrefix=1
+        - id: course-service
+          uri: lb://course-service
+          predicates:
+            - Path=/api/courses/**,/api/notices/**,/api/resources/**,/api/assignments/**,/api/submissions/**,/api/stats/**
+          filters:
+            - StripPrefix=1
+        - id: collaboration-service
+          uri: lb://collaboration-service
+          predicates:
+            - Path=/api/projects/**,/api/discussions/**,/api/showcases/**
+          filters:
+            - StripPrefix=1
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/files/**
+          filters:
+            - StripPrefix=1
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:course-platform-jwt-secret-at-least-32-bytes}
+

@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+*.iml
+
+target/
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+uploads/
+logs/
+*.log
+
+.env
+.DS_Store

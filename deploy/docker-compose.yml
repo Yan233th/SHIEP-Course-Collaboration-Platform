@@ -1,0 +1,161 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ccp-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: course_collab
+      TZ: Asia/Shanghai
+    ports:
+      - "42033:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../database:/database:ro
+      - ../database/init-docker.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: ccp-redis
+    ports:
+      - "6379:6379"
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: ccp-nacos
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+      NACOS_AUTH_ENABLE: "false"
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: ccp-zipkin
+    ports:
+      - "9411:9411"
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        MODULE: user-service
+    environment: &backend-env
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: course_collab
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NACOS_ADDR: nacos:8848
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: course-platform-jwt-secret-at-least-32-bytes
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_started
+      zipkin:
+        condition: service_started
+
+  course-service:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        MODULE: course-service
+    environment:
+      <<: *backend-env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_started
+      zipkin:
+        condition: service_started
+
+  collaboration-service:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        MODULE: collaboration-service
+    environment:
+      <<: *backend-env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_started
+      zipkin:
+        condition: service_started
+
+  file-service:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        MODULE: file-service
+    environment:
+      <<: *backend-env
+      FILE_STORAGE_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+      zipkin:
+        condition: service_started
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        MODULE: gateway
+    environment:
+      <<: *backend-env
+      SERVER_PORT: 8080
+    ports:
+      - "42080:8080"
+    depends_on:
+      nacos:
+        condition: service_started
+      user-service:
+        condition: service_started
+      course-service:
+        condition: service_started
+      collaboration-service:
+        condition: service_started
+      file-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      gateway:
+        condition: service_started
+
+volumes:
+  mysql-data:
+  uploads:
