@@ -313,12 +313,12 @@ a {
 .sidebar .el-sub-menu .el-menu--inline::before {
   content: "";
   position: absolute;
-  top: -6px;
+  top: 6px;
   bottom: 8px;
   left: 23px;
   width: 2px;
   border-radius: 2px;
-  background: linear-gradient(180deg, rgb(54 209 193 / 38%) 0%, rgb(255 255 255 / 16%) 100%);
+  background: linear-gradient(180deg, rgb(54 232 213 / 58%) 0%, rgb(255 255 255 / 16%) 100%);
   pointer-events: none;
 }
 
