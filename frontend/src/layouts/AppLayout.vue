@@ -2,7 +2,6 @@
   <el-container class="app-shell">
     <el-aside width="248px" class="sidebar">
       <RouterLink class="brand" to="/dashboard">
-        <span class="brand-mark">协</span>
         <span class="brand-copy">
           <strong>课程协同</strong>
           <small>Course Workspace</small>
@@ -32,11 +31,9 @@
       </div>
 
       <div class="sidebar-profile">
-        <span class="profile-avatar">{{ userInitial }}</span>
-        <span class="profile-copy">
-          <strong>{{ appState.session.realName || appState.session.username }}</strong>
-          <small>{{ roleLabel(currentRole) }}</small>
-        </span>
+        <span>当前用户</span>
+        <strong>{{ appState.session.realName || appState.session.username }}</strong>
+        <small>{{ roleLabel(currentRole) }}</small>
       </div>
     </el-aside>
 
@@ -104,7 +101,6 @@ const pageScope = computed(() => {
   if (showCourseContext.value) return '课程空间'
   return '总览'
 })
-const userInitial = computed(() => (appState.session.realName || appState.session.username || 'U').slice(0, 1).toUpperCase())
 const currentCourseModel = computed({
   get: () => currentCourseId.value,
   set: (value: number) => {

@@ -2,7 +2,6 @@
   <main class="login-shell">
     <section class="login-product-panel">
       <div class="login-brandline">
-        <span class="brand-mark">协</span>
         <span>
           <strong>课程协同</strong>
           <small>Course Workspace</small>
