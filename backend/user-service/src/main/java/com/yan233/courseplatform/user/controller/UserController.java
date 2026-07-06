@@ -7,6 +7,7 @@ import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.dto.UserBrief;
 import com.yan233.courseplatform.common.web.UserContext;
 import com.yan233.courseplatform.user.dto.MenuItem;
+import com.yan233.courseplatform.user.dto.ProfileUpdateRequest;
 import com.yan233.courseplatform.user.dto.UserQuery;
 import com.yan233.courseplatform.user.dto.UserRequest;
 import com.yan233.courseplatform.user.entity.SysUser;
@@ -76,6 +77,18 @@ public class UserController {
         requireAdmin(servletRequest);
         userService.removeBatchByIds(ids);
         return Result.ok();
+    }
+
+    @GetMapping("/me")
+    public Result<SysUser> profile(HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        return Result.ok(userService.getProfile(current.userId()));
+    }
+
+    @PutMapping("/me")
+    public Result<SysUser> updateProfile(@RequestBody @Valid ProfileUpdateRequest request, HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        return Result.ok(userService.updateProfile(current.userId(), request));
     }
 
     @GetMapping("/{id}")

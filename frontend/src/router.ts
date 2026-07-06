@@ -16,6 +16,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: '/dashboard' },
       { path: 'dashboard', name: 'dashboard', component: () => import('./views/DashboardView.vue'), meta: { title: '工作台' } },
+      { path: 'profile', name: 'profile', component: () => import('./views/ProfileView.vue'), meta: { title: '个人信息' } },
       { path: 'admin/users', name: 'admin-users', component: () => import('./views/UserManagementView.vue'), meta: { title: '用户与角色', roles: ['ADMIN'] } },
       { path: 'admin/stats', name: 'admin-stats', component: () => import('./views/StatsView.vue'), meta: { title: '课程统计', roles: ['ADMIN'] } },
       { path: 'courses/list', name: 'courses-list', component: () => import('./views/CourseListView.vue'), meta: { title: '课程空间' } },

@@ -1,6 +1,6 @@
 import { computed, reactive, ref } from 'vue'
 import { authService, courseService, userService } from '../services/platform'
-import type { Course, CourseAccess, MenuNode, Page, RoleCode, Session } from '../types'
+import type { Course, CourseAccess, MenuNode, Page, RoleCode, Session, UserRow } from '../types'
 
 export const SESSION_KEY = 'course-platform-session'
 export const TOKEN_KEY = 'course-platform-token'
@@ -83,6 +83,11 @@ export function logout() {
   appState.courseAccess = null
   appState.courseAccessLoading = false
   appState.bootstrapped = false
+}
+
+export function syncSessionProfile(user: Pick<UserRow, 'realName'>) {
+  appState.session.realName = user.realName
+  localStorage.setItem(SESSION_KEY, JSON.stringify(appState.session))
 }
 
 export async function bootstrapApp() {

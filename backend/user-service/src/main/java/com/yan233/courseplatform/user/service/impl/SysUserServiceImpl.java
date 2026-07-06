@@ -11,6 +11,7 @@ import com.yan233.courseplatform.common.exception.BusinessException;
 import com.yan233.courseplatform.common.util.PageUtils;
 import com.yan233.courseplatform.user.dto.LoginResponse;
 import com.yan233.courseplatform.user.dto.MenuItem;
+import com.yan233.courseplatform.user.dto.ProfileUpdateRequest;
 import com.yan233.courseplatform.user.dto.UserQuery;
 import com.yan233.courseplatform.user.dto.UserRequest;
 import com.yan233.courseplatform.user.entity.SysUser;
@@ -101,6 +102,32 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
+    public SysUser getProfile(Long id) {
+        SysUser user = getById(id);
+        if (user == null || Integer.valueOf(0).equals(user.getStatus())) {
+            throw new BusinessException(404, "用户不存在或不可用");
+        }
+        user.setPassword(null);
+        return user;
+    }
+
+    @Override
+    @Transactional
+    public SysUser updateProfile(Long id, ProfileUpdateRequest request) {
+        SysUser user = getById(id);
+        if (user == null || Integer.valueOf(0).equals(user.getStatus())) {
+            throw new BusinessException(404, "用户不存在或不可用");
+        }
+        user.setRealName(request.getRealName().trim());
+        user.setEmail(cleanOptional(request.getEmail()));
+        user.setPhone(cleanOptional(request.getPhone()));
+        user.setGender(request.getGender());
+        updateById(user);
+        user.setPassword(null);
+        return user;
+    }
+
+    @Override
     public PageResult<SysUser> pageUsers(UserQuery query) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.and(query.getKeyword() != null && !query.getKeyword().isBlank(), w -> w
@@ -166,6 +193,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         List<String> roles = List.of(user.getRoleCode());
         String token = JwtSupport.createToken(jwtSecret, user.getId(), user.getUsername(), roles, Duration.ofHours(expireHours));
         return new LoginResponse(token, user.getId(), user.getUsername(), user.getRealName(), roles);
+    }
+
+    private String cleanOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private void applySort(LambdaQueryWrapper<SysUser> wrapper, String sortField, String sortOrder) {

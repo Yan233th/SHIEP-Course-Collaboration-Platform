@@ -30,11 +30,11 @@
         </el-menu>
       </div>
 
-      <div class="sidebar-profile">
+      <RouterLink class="sidebar-profile" to="/profile">
         <span>当前用户</span>
         <strong>{{ appState.session.realName || appState.session.username }}</strong>
         <small>{{ roleLabel(currentRole) }}</small>
-      </div>
+      </RouterLink>
     </el-aside>
 
     <el-container>

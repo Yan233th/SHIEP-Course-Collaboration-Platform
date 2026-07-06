@@ -47,6 +47,13 @@ export interface UserPayload {
   status: number
 }
 
+export interface ProfilePayload {
+  realName: string
+  email?: string
+  phone?: string
+  gender: 'M' | 'F' | 'U'
+}
+
 export const authService = {
   login(payload: { username: string; password: string }) {
     return unwrap<Session>(http.post('/auth/login', payload))
@@ -56,6 +63,9 @@ export const authService = {
 export const userService = {
   getMenus() {
     return unwrap<MenuNode[]>(http.get('/users/menus'))
+  },
+  getCurrentUser() {
+    return unwrap<UserRow>(http.get('/users/me'))
   },
   getUsers(params: UserQuery) {
     return unwrap<Page<UserRow>>(http.get('/users', { params }))
@@ -68,6 +78,9 @@ export const userService = {
   },
   updateUser(id: number, payload: UserPayload) {
     return unwrap<UserRow>(http.put(`/users/${id}`, payload))
+  },
+  updateProfile(payload: ProfilePayload) {
+    return unwrap<UserRow>(http.put('/users/me', payload))
   },
   batchDelete(ids: number[]) {
     return unwrap<void>(http.delete('/users/batch', { data: ids }))

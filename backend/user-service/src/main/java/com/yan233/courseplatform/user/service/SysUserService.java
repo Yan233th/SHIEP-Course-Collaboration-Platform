@@ -5,6 +5,7 @@ import com.yan233.courseplatform.common.api.PageResult;
 import com.yan233.courseplatform.common.dto.UserBrief;
 import com.yan233.courseplatform.user.dto.LoginResponse;
 import com.yan233.courseplatform.user.dto.MenuItem;
+import com.yan233.courseplatform.user.dto.ProfileUpdateRequest;
 import com.yan233.courseplatform.user.dto.UserQuery;
 import com.yan233.courseplatform.user.dto.UserRequest;
 import com.yan233.courseplatform.user.entity.SysUser;
@@ -21,6 +22,10 @@ public interface SysUserService extends IService<SysUser> {
     SysUser create(UserRequest request);
 
     SysUser updateUser(Long id, UserRequest request);
+
+    SysUser getProfile(Long id);
+
+    SysUser updateProfile(Long id, ProfileUpdateRequest request);
 
     PageResult<SysUser> pageUsers(UserQuery query);
 
