@@ -1,31 +1,45 @@
 <template>
   <el-container class="app-shell">
-    <el-aside width="236px" class="sidebar">
+    <el-aside width="248px" class="sidebar">
       <RouterLink class="brand" to="/dashboard">
         <span class="brand-mark">协</span>
-        <span>课程协同管理平台</span>
+        <span class="brand-copy">
+          <strong>课程协同</strong>
+          <small>Course Workspace</small>
+        </span>
       </RouterLink>
 
-      <el-menu :default-active="route.path" router>
-        <el-menu-item index="/dashboard">
-          <el-icon><Platform /></el-icon>
-          <span>工作台</span>
-        </el-menu-item>
-        <el-sub-menu v-for="menu in appState.menus" :key="menu.path" :index="menu.path">
-          <template #title>
-            <el-icon><component :is="menuIcon(menu.path)" /></el-icon>
-            <span>{{ menu.title }}</span>
-          </template>
-          <el-menu-item v-for="child in menu.children" :key="child.path" :index="child.path">
-            {{ child.title }}
+      <div class="nav-scroll">
+        <el-menu :default-active="route.path" router>
+          <el-menu-item index="/dashboard">
+            <el-icon><Platform /></el-icon>
+            <span>工作台</span>
           </el-menu-item>
-        </el-sub-menu>
-      </el-menu>
+          <el-sub-menu v-for="menu in appState.menus" :key="menu.path" :index="menu.path">
+            <template #title>
+              <el-icon><component :is="menuIcon(menu.path)" /></el-icon>
+              <span>{{ menu.title }}</span>
+            </template>
+            <el-menu-item v-for="child in menu.children" :key="child.path" :index="child.path">
+              {{ child.title }}
+            </el-menu-item>
+          </el-sub-menu>
+        </el-menu>
+      </div>
+
+      <div class="sidebar-profile">
+        <span class="profile-avatar">{{ userInitial }}</span>
+        <span class="profile-copy">
+          <strong>{{ appState.session.realName || appState.session.username }}</strong>
+          <small>{{ roleLabel(currentRole) }}</small>
+        </span>
+      </div>
     </el-aside>
 
     <el-container>
       <el-header class="topbar">
         <div class="page-title">
+          <span class="page-kicker">{{ pageScope }}</span>
           <strong>{{ pageTitle }}</strong>
           <div class="identity-strip">
             <span class="muted">{{ appState.session.realName }}</span>
@@ -47,10 +61,10 @@
               />
             </el-select>
             <el-tooltip content="刷新当前页">
-              <el-button :icon="Refresh" @click="triggerRefresh">刷新</el-button>
+              <el-button class="icon-button" :icon="Refresh" aria-label="刷新当前页" @click="triggerRefresh" />
             </el-tooltip>
           </div>
-          <el-button :icon="SwitchButton" @click="handleLogout">退出</el-button>
+          <el-button class="logout-button" :icon="SwitchButton" @click="handleLogout">退出</el-button>
         </div>
       </el-header>
 
@@ -72,6 +86,12 @@ const router = useRouter()
 
 const pageTitle = computed(() => typeof route.meta.title === 'string' ? route.meta.title : '工作台')
 const showCourseContext = computed(() => Boolean(route.meta.courseScoped))
+const pageScope = computed(() => {
+  if (route.path.startsWith('/admin')) return '平台管理'
+  if (showCourseContext.value) return '课程空间'
+  return '总览'
+})
+const userInitial = computed(() => (appState.session.realName || appState.session.username || 'U').slice(0, 1).toUpperCase())
 const currentCourseModel = computed({
   get: () => currentCourseId.value,
   set: (value: number) => {

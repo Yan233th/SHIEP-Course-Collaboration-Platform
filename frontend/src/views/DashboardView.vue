@@ -1,20 +1,22 @@
 <template>
   <section class="dashboard">
     <div class="dashboard-hero">
-      <div>
-        <p class="eyebrow">课程协同工作台</p>
+      <div class="hero-main">
+        <p class="eyebrow">{{ heroKicker }}</p>
         <h1>{{ dashboardTitle }}</h1>
         <p>{{ dashboardSubtitle }}</p>
         <div class="hero-meta">
           <el-tag effect="plain">{{ roleLabel(currentRole) }}</el-tag>
-          <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" type="success">
-            {{ roleLabel(appState.courseAccess.courseRole) }}
+          <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
+            课程身份：{{ roleLabel(appState.courseAccess.courseRole) }}
           </el-tag>
-          <el-tag effect="plain" type="info">{{ appState.courseAccess?.actions.length || 0 }} 项权限</el-tag>
+          <el-tag effect="plain" type="info">{{ permissionCount }} 项权限</el-tag>
         </div>
       </div>
-      <div class="hero-switcher">
-        <span>当前课程</span>
+      <div class="hero-context-card">
+        <span class="hero-context-label">当前课程</span>
+        <strong>{{ currentCourseLabel }}</strong>
+        <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
         <el-select v-model="currentCourseModel" filterable placeholder="选择课程">
           <el-option
             v-for="course in appState.courses.records"
@@ -27,21 +29,13 @@
     </div>
 
     <div class="metric-grid">
-      <article class="metric-card">
-        <span>{{ hasSystemRole('ADMIN') ? '平台课程' : '我的课程' }}</span>
-        <strong>{{ appState.courses.total }}</strong>
-      </article>
-      <article class="metric-card">
-        <span>当前课程人数</span>
-        <strong>{{ selectedCourse?.currentStudents ?? 0 }}</strong>
-      </article>
-      <article class="metric-card">
-        <span>学分</span>
-        <strong>{{ selectedCourse?.credit ?? '-' }}</strong>
-      </article>
-      <article class="metric-card">
-        <span>学时</span>
-        <strong>{{ selectedCourse?.hours ?? '-' }}</strong>
+      <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
+        <span class="metric-icon">
+          <el-icon><component :is="metric.icon" /></el-icon>
+        </span>
+        <span class="metric-label">{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.caption }}</small>
       </article>
     </div>
 
@@ -66,46 +60,75 @@
         </div>
       </section>
 
-      <section v-if="hasSystemRole('ADMIN')" class="panel">
+      <section class="panel status-panel">
         <div class="section-heading">
           <div>
-            <h2>课程概览</h2>
-            <p>来自统计视图的课程资源与项目数据。</p>
+            <h2>角色状态</h2>
+            <p>{{ selectedCourse?.courseName || '当前平台' }}</p>
           </div>
-          <el-button :icon="Refresh" @click="loadStats">刷新</el-button>
+          <strong>{{ roleLabel(appState.courseAccess?.courseRole || currentRole) }}</strong>
         </div>
-        <el-table :data="stats" height="300px">
-          <el-table-column prop="course_name" label="课程" />
-          <el-table-column prop="member_count" label="成员" width="80" />
-          <el-table-column prop="resource_count" label="资源" width="80" />
-          <el-table-column prop="assignment_count" label="作业" width="80" />
-          <el-table-column prop="project_group_count" label="项目组" width="90" />
-        </el-table>
-      </section>
-
-      <section v-else class="panel">
-        <div class="section-heading">
+        <div class="status-list">
           <div>
-            <h2>当前课程</h2>
-            <p>角色：{{ roleLabel(appState.courseAccess?.courseRole || currentRole) }}</p>
+            <span>系统身份</span>
+            <strong>{{ roleLabel(currentRole) }}</strong>
+          </div>
+          <div>
+            <span>课程身份</span>
+            <strong>{{ roleLabel(appState.courseAccess?.courseRole) }}</strong>
+          </div>
+          <div>
+            <span>容量占用</span>
+            <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
           </div>
         </div>
-        <dl class="course-summary">
-          <div>
-            <dt>课程编号</dt>
-            <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
-          </div>
-          <div>
-            <dt>任课教师</dt>
-            <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
-          </div>
-          <div>
-            <dt>课程说明</dt>
-            <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
-          </div>
-        </dl>
+        <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
+        <div class="capability-tags">
+          <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
+          <span v-if="!visibleActions.length" class="muted">暂无课程操作权限</span>
+        </div>
       </section>
     </div>
+
+    <section v-if="hasSystemRole('ADMIN')" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>课程概览</h2>
+          <p>来自统计视图的课程资源与项目数据。</p>
+        </div>
+        <el-button :icon="Refresh" @click="loadStats">刷新</el-button>
+      </div>
+      <el-table :data="stats" height="300px">
+        <el-table-column prop="course_name" label="课程" />
+        <el-table-column prop="member_count" label="成员" width="80" />
+        <el-table-column prop="resource_count" label="资源" width="80" />
+        <el-table-column prop="assignment_count" label="作业" width="80" />
+        <el-table-column prop="project_group_count" label="项目组" width="90" />
+      </el-table>
+    </section>
+
+    <section v-else class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>当前课程</h2>
+          <p>课程基础信息与教学上下文。</p>
+        </div>
+      </div>
+      <dl class="course-summary">
+        <div>
+          <dt>课程编号</dt>
+          <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
+        </div>
+        <div>
+          <dt>任课教师</dt>
+          <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
+        </div>
+        <div>
+          <dt>课程说明</dt>
+          <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
+        </div>
+      </dl>
+    </section>
   </section>
 </template>
 
@@ -123,6 +146,7 @@ const currentCourseModel = computed({
     void setCurrentCourse(value)
   }
 })
+const heroKicker = computed(() => hasSystemRole('ADMIN') ? 'Platform Overview' : 'Course Workspace')
 const dashboardTitle = computed(() => {
   if (hasSystemRole('ADMIN')) return '平台管理总览'
   return currentCourseLabel.value
@@ -133,6 +157,50 @@ const dashboardSubtitle = computed(() => {
   if (hasSystemRole('TA')) return '协助教师维护课程内容、作业批改和讨论秩序。'
   return '查看课程资料、提交作业、参与项目组和课程讨论。'
 })
+const permissionCount = computed(() => appState.courseAccess?.actions.length || 0)
+const courseRoleTagType = computed(() => {
+  const role = appState.courseAccess?.courseRole
+  if (role === 'TEACHER') return 'success'
+  if (role === 'TA') return 'warning'
+  if (role === 'STUDENT') return 'info'
+  return ''
+})
+const capacityPercent = computed(() => {
+  const max = selectedCourse.value?.maxStudents || 0
+  if (!max) return 0
+  return Math.min(100, Math.round(((selectedCourse.value?.currentStudents || 0) / max) * 100))
+})
+const visibleActions = computed(() => (appState.courseAccess?.actions || []).slice(0, 10))
+const metrics = computed(() => [
+  {
+    label: hasSystemRole('ADMIN') ? '平台课程' : '我的课程',
+    value: appState.courses.total,
+    caption: '可访问课程空间',
+    icon: Files,
+    tone: 'tone-teal'
+  },
+  {
+    label: '当前课程人数',
+    value: selectedCourse.value?.currentStudents ?? 0,
+    caption: `容量 ${selectedCourse.value?.maxStudents ?? '-'}`,
+    icon: Connection,
+    tone: 'tone-blue'
+  },
+  {
+    label: '学分',
+    value: selectedCourse.value?.credit ?? '-',
+    caption: selectedCourse.value?.courseCode || '课程编号',
+    icon: Notebook,
+    tone: 'tone-amber'
+  },
+  {
+    label: '学时',
+    value: selectedCourse.value?.hours ?? '-',
+    caption: '教学计划学时',
+    icon: Collection,
+    tone: 'tone-rose'
+  }
+])
 const quickLinks = computed(() => {
   const links = [
     { title: '成员与权限', caption: '课程身份', to: '/courses/members', icon: Connection },
