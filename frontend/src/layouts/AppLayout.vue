@@ -12,16 +12,20 @@
       <div class="nav-scroll">
         <el-menu :default-active="route.path" router :collapse-transition="false">
           <el-menu-item index="/dashboard">
-            <el-icon><Platform /></el-icon>
-            <span>工作台</span>
+            <span class="menu-entry">
+              <el-icon><Platform /></el-icon>
+              <span>工作台</span>
+            </span>
           </el-menu-item>
           <el-sub-menu v-for="menu in appState.menus" :key="menu.path" :index="menu.path">
             <template #title>
-              <el-icon><component :is="menuIcon(menu.path)" /></el-icon>
-              <span>{{ menu.title }}</span>
+              <span class="menu-entry">
+                <el-icon><component :is="menuIcon(menu.path)" /></el-icon>
+                <span>{{ menu.title }}</span>
+              </span>
             </template>
             <el-menu-item v-for="child in menu.children" :key="child.path" :index="child.path">
-              {{ child.title }}
+              <span class="menu-entry submenu-entry">{{ child.title }}</span>
             </el-menu-item>
           </el-sub-menu>
         </el-menu>
