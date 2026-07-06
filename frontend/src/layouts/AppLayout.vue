@@ -10,7 +10,7 @@
       </RouterLink>
 
       <div class="nav-scroll">
-        <el-menu :default-active="route.path" router>
+        <el-menu :default-active="route.path" router :collapse-transition="false">
           <el-menu-item index="/dashboard">
             <el-icon><Platform /></el-icon>
             <span>工作台</span>
@@ -50,9 +50,16 @@
           </div>
         </div>
         <div class="topbar-actions">
-          <div v-if="showCourseContext" class="course-context">
-            <span>当前课程</span>
-            <el-select v-model="currentCourseModel" filterable placeholder="选择课程" :loading="appState.courseAccessLoading">
+          <div v-if="showCourseContext" class="course-context" @click.capture="handleCourseContextClick">
+            <span class="course-context-label">当前课程</span>
+            <el-select
+              ref="courseSelectRef"
+              v-model="currentCourseModel"
+              filterable
+              placeholder="选择课程"
+              :loading="appState.courseAccessLoading"
+              @visible-change="courseSelectOpen = $event"
+            >
               <el-option
                 v-for="course in appState.courses.records"
                 :key="course.id"
@@ -76,13 +83,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Collection, Files, FolderOpened, Platform, Refresh, SwitchButton, User } from '@element-plus/icons-vue'
 import { appState, bootstrapApp, courseLabel, currentCourseId, currentRole, logout, roleLabel, setCurrentCourse, triggerRefresh } from '../state/appState'
 
 const route = useRoute()
 const router = useRouter()
+const courseSelectRef = ref<{ blur: () => void; toggleMenu: (event?: Event) => void } | null>(null)
+const courseSelectOpen = ref(false)
 
 const pageTitle = computed(() => typeof route.meta.title === 'string' ? route.meta.title : '工作台')
 const showCourseContext = computed(() => Boolean(route.meta.courseScoped))
@@ -120,6 +129,22 @@ function menuIcon(path: string) {
 function handleLogout() {
   logout()
   router.replace('/login')
+}
+
+function handleCourseContextClick(event: MouseEvent) {
+  const target = event.target as HTMLElement | null
+  if (!target || target.closest('.icon-button')) return
+  const isCourseTrigger = Boolean(target.closest('.el-select') || target.closest('.course-context-label'))
+  if (!isCourseTrigger) return
+  event.preventDefault()
+  event.stopPropagation()
+  event.stopImmediatePropagation()
+  if (courseSelectOpen.value) {
+    courseSelectRef.value?.blur()
+    courseSelectOpen.value = false
+    return
+  }
+  courseSelectRef.value?.toggleMenu(event)
 }
 
 onMounted(async () => {
