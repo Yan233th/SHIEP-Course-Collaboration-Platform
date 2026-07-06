@@ -306,6 +306,22 @@ a {
   padding: 3px 0;
 }
 
+.sidebar .el-sub-menu .el-menu--inline {
+  position: relative;
+}
+
+.sidebar .el-sub-menu .el-menu--inline::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 25px;
+  width: 1px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 12%);
+  pointer-events: none;
+}
+
 .sidebar .el-menu-item,
 .sidebar .el-sub-menu__title {
   position: relative;
