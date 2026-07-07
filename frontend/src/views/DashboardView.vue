@@ -177,7 +177,7 @@ const metrics = computed(() => [
     value: appState.courses.total,
     caption: '可访问课程空间',
     icon: Files,
-    tone: 'tone-teal'
+    tone: 'tone-brand'
   },
   {
     label: '当前课程人数',
