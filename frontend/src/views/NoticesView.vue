@@ -15,9 +15,12 @@
 
     <div v-if="!notices.length" class="empty-inline">暂无通知</div>
     <el-timeline v-else class="timeline-list">
-      <el-timeline-item v-for="notice in notices" :key="notice.id" :timestamp="notice.createTime">
-        <article class="notice-item">
-          <strong>{{ notice.title }}</strong>
+      <el-timeline-item v-for="notice in displayNotices" :key="notice.id" :timestamp="formatNoticeTime(notice.createTime)">
+        <article class="notice-item" :class="{ pinned: notice.pinned === 1 }">
+          <div class="notice-title-row">
+            <strong>{{ notice.title }}</strong>
+            <el-tag v-if="notice.pinned === 1" size="small" effect="plain">置顶</el-tag>
+          </div>
           <p>{{ notice.content }}</p>
         </article>
       </el-timeline-item>
@@ -50,6 +53,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
+import dayjs from 'dayjs'
 import { courseService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import type { Notice } from '../types'
@@ -59,9 +63,17 @@ const noticeDrawer = ref(false)
 const noticePinned = ref(false)
 const noticeForm = reactive({ title: '', content: '', pinned: 0, status: 1 })
 const canCreateNotice = computed(() => Boolean(noticeForm.title.trim() && noticeForm.content.trim()))
+const displayNotices = computed(() => [...notices.value].sort((a, b) => {
+  if (a.pinned !== b.pinned) return b.pinned - a.pinned
+  return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+}))
 
 async function loadNotices() {
   notices.value = await courseService.getNotices(currentCourseId.value)
+}
+
+function formatNoticeTime(value: string) {
+  return dayjs(value).format('YYYY-MM-DD HH:mm')
 }
 
 function openNoticeDrawer() {
