@@ -152,6 +152,8 @@ export interface Discussion {
   title: string
   content: string
   authorId: number
+  authorName?: string
+  authorUsername?: string
   createTime?: string
 }
 
