@@ -11,6 +11,7 @@ import type {
   Page,
   ProjectGroup,
   ProjectMember,
+  ProjectMemberDetail,
   ResourceItem,
   Session,
   Showcase,
@@ -163,6 +164,9 @@ export const collaborationService = {
   },
   getGroupMembers(groupId: number) {
     return unwrap<ProjectMember[]>(http.get(`/projects/groups/${groupId}/members`))
+  },
+  getGroupMemberDetails(groupId: number) {
+    return unwrap<ProjectMemberDetail[]>(http.get(`/projects/groups/${groupId}/member-details`))
   },
   getDiscussions(courseId: number) {
     return unwrap<Discussion[]>(http.get('/discussions', { params: { courseId } }))

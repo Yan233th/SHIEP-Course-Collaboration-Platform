@@ -128,6 +128,22 @@ export interface ProjectMember {
   status: number
 }
 
+export interface UserBrief {
+  id: number
+  username: string
+  realName: string
+  roleCode: string
+}
+
+export interface ProjectMemberDetail {
+  id: number
+  groupId: number
+  userId: number
+  roleName: string
+  status: number
+  user?: UserBrief | null
+}
+
 export interface Discussion {
   id: number
   courseId: number

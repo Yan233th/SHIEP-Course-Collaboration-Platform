@@ -19,10 +19,14 @@
       <el-table-column label="人数" width="90">
         <template #default="{ row }">{{ row.currentMembers }}/{{ row.maxMembers }}</template>
       </el-table-column>
-      <el-table-column v-if="can('JOIN_GROUP')" label="操作" width="130">
+      <el-table-column label="操作" width="220">
         <template #default="{ row }">
-          <el-button v-if="isJoined(row.id)" size="small" type="danger" text @click="leaveGroup(row.id)">退出</el-button>
-          <el-button v-else size="small" :disabled="row.currentMembers >= row.maxMembers" @click="joinGroup(row.id)">加入</el-button>
+          <el-button size="small" @click="openMembersDrawer(row)">成员</el-button>
+          <el-tag v-if="isJoined(row.id)" size="small" type="success" effect="plain">已加入</el-tag>
+          <template v-if="can('JOIN_GROUP')">
+            <el-button v-if="isJoined(row.id)" size="small" type="danger" text @click="leaveGroup(row.id)">退出</el-button>
+            <el-button v-else size="small" :disabled="row.currentMembers >= row.maxMembers" @click="joinGroup(row.id)">加入</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -48,6 +52,26 @@
         </div>
       </template>
     </el-drawer>
+
+    <el-drawer
+      v-model="membersDrawer"
+      :title="membersGroupName ? `${membersGroupName} · 项目组成员` : '项目组成员'"
+      append-to-body
+      class="workspace-drawer"
+      direction="rtl"
+      size="420px"
+    >
+      <div v-if="!members.length" class="empty-inline">暂无成员</div>
+      <el-table v-else :data="members" size="small">
+        <el-table-column label="姓名">
+          <template #default="{ row }">{{ memberLabel(row.user) }}</template>
+        </el-table-column>
+        <el-table-column prop="roleName" label="组内角色" width="120" />
+        <el-table-column label="账号" width="130">
+          <template #default="{ row }">{{ row.user?.username || '-' }}</template>
+        </el-table-column>
+      </el-table>
+    </el-drawer>
   </section>
 </template>
 
@@ -57,11 +81,14 @@ import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { collaborationService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
-import type { ProjectGroup } from '../types'
+import type { ProjectGroup, ProjectMemberDetail, UserBrief } from '../types'
 
 const groups = ref<ProjectGroup[]>([])
 const joinedGroupIds = ref<Set<number>>(new Set())
 const groupDrawer = ref(false)
+const membersDrawer = ref(false)
+const membersGroupName = ref('')
+const members = ref<ProjectMemberDetail[]>([])
 const groupForm = reactive({ name: '', topic: '', maxMembers: 5, status: 1 })
 const canCreateGroup = computed(() => Boolean(groupForm.name.trim() && groupForm.topic.trim()))
 
@@ -84,6 +111,18 @@ async function loadMemberships() {
 
 function isJoined(groupId: number) {
   return joinedGroupIds.value.has(groupId)
+}
+
+async function openMembersDrawer(group: ProjectGroup) {
+  membersGroupName.value = group.name
+  members.value = []
+  membersDrawer.value = true
+  members.value = await collaborationService.getGroupMemberDetails(group.id)
+}
+
+function memberLabel(user?: UserBrief | null) {
+  if (!user) return '-'
+  return user.realName || user.username
 }
 
 function openGroupDrawer() {
@@ -124,6 +163,7 @@ async function leaveGroup(groupId: number) {
 onMounted(loadGroups)
 watch([currentCourseId, refreshSignal], () => {
   groupDrawer.value = false
+  membersDrawer.value = false
   resetGroupForm()
   void loadGroups()
 })
