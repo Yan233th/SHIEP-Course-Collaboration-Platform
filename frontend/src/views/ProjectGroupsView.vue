@@ -19,9 +19,10 @@
       <el-table-column label="人数" width="90">
         <template #default="{ row }">{{ row.currentMembers }}/{{ row.maxMembers }}</template>
       </el-table-column>
-      <el-table-column v-if="can('JOIN_GROUP')" label="操作" width="90">
+      <el-table-column v-if="can('JOIN_GROUP')" label="操作" width="130">
         <template #default="{ row }">
-          <el-button size="small" :disabled="row.currentMembers >= row.maxMembers" @click="joinGroup(row.id)">加入</el-button>
+          <el-button v-if="isJoined(row.id)" size="small" type="danger" text @click="leaveGroup(row.id)">退出</el-button>
+          <el-button v-else size="small" :disabled="row.currentMembers >= row.maxMembers" @click="joinGroup(row.id)">加入</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -59,12 +60,30 @@ import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } fro
 import type { ProjectGroup } from '../types'
 
 const groups = ref<ProjectGroup[]>([])
+const joinedGroupIds = ref<Set<number>>(new Set())
 const groupDrawer = ref(false)
 const groupForm = reactive({ name: '', topic: '', maxMembers: 5, status: 1 })
 const canCreateGroup = computed(() => Boolean(groupForm.name.trim() && groupForm.topic.trim()))
 
 async function loadGroups() {
   groups.value = await collaborationService.getGroups(currentCourseId.value)
+  await loadMemberships()
+}
+
+async function loadMemberships() {
+  if (!can('JOIN_GROUP') || !groups.value.length) {
+    joinedGroupIds.value = new Set()
+    return
+  }
+  const entries = await Promise.all(groups.value.map(async (group) => {
+    const members = await collaborationService.getGroupMembers(group.id)
+    return [group.id, members.some((member) => member.userId === appState.session.userId)] as const
+  }))
+  joinedGroupIds.value = new Set(entries.filter(([, joined]) => joined).map(([groupId]) => groupId))
+}
+
+function isJoined(groupId: number) {
+  return joinedGroupIds.value.has(groupId)
 }
 
 function openGroupDrawer() {
@@ -93,6 +112,12 @@ async function createGroup() {
 async function joinGroup(groupId: number) {
   await collaborationService.joinGroup(groupId, { userId: appState.session.userId, roleName: '成员' })
   ElMessage.success('已加入项目组')
+  await loadGroups()
+}
+
+async function leaveGroup(groupId: number) {
+  await collaborationService.leaveGroup(groupId)
+  ElMessage.success('已退出项目组')
   await loadGroups()
 }
 

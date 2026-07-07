@@ -1030,6 +1030,86 @@ a {
   gap: 12px;
 }
 
+.assignment-detail {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.assignment-detail > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.assignment-detail span,
+.assignment-detail dt {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.assignment-detail strong {
+  color: var(--app-ink-strong);
+  font-size: 15px;
+}
+
+.assignment-detail p {
+  margin: 0;
+  color: var(--app-text-soft);
+  line-height: 1.65;
+}
+
+.assignment-detail dl {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.assignment-detail dd {
+  margin: 4px 0 0;
+  color: var(--app-ink-strong);
+}
+
+.discussion-title-cell {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discussion-title-cell span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-context {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.reply-context span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reply-context strong {
+  overflow: hidden;
+  color: var(--app-ink-strong);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .grade-form {
   padding-top: 4px;
 }

@@ -88,16 +88,30 @@ public class ProjectController {
         return Result.ok(groupService.join(id, request));
     }
 
+    @DeleteMapping("/groups/{id}/members/me")
+    public Result<Void> leave(@PathVariable Long id, HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        ProjectGroup group = accessService.requireGroup(id);
+        accessService.requireCanViewCourse(group.getCourseId(), current);
+        AccessControl.requireRole(current, "ADMIN", "STUDENT");
+        groupService.leave(id, current.userId());
+        return Result.ok();
+    }
+
     @GetMapping("/groups/{id}/members")
     public Result<List<ProjectMember>> members(@PathVariable Long id, HttpServletRequest servletRequest) {
         accessService.requireCanViewGroup(id, UserContext.from(servletRequest));
-        return Result.ok(memberMapper.selectList(new LambdaQueryWrapper<ProjectMember>().eq(ProjectMember::getGroupId, id)));
+        return Result.ok(memberMapper.selectList(new LambdaQueryWrapper<ProjectMember>()
+                .eq(ProjectMember::getGroupId, id)
+                .eq(ProjectMember::getStatus, 1)));
     }
 
     @GetMapping("/groups/{id}/member-details")
     public Result<List<ProjectMemberDetail>> memberDetails(@PathVariable Long id, HttpServletRequest servletRequest) {
         accessService.requireCanViewGroup(id, UserContext.from(servletRequest));
-        List<ProjectMember> members = memberMapper.selectList(new LambdaQueryWrapper<ProjectMember>().eq(ProjectMember::getGroupId, id));
+        List<ProjectMember> members = memberMapper.selectList(new LambdaQueryWrapper<ProjectMember>()
+                .eq(ProjectMember::getGroupId, id)
+                .eq(ProjectMember::getStatus, 1));
         List<Long> userIds = members.stream().map(ProjectMember::getUserId).toList();
         List<UserBrief> users = userFeignClient.usersByIds(userIds).getData();
         return Result.ok(members.stream()

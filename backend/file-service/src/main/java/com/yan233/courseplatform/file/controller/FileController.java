@@ -8,6 +8,7 @@ import com.yan233.courseplatform.file.entity.FileMetadata;
 import com.yan233.courseplatform.file.service.FileStorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/files")
@@ -52,7 +54,14 @@ public class FileController {
         MediaType type = metadata.getContentType() == null
                 ? MediaType.APPLICATION_OCTET_STREAM
                 : MediaType.parseMediaType(metadata.getContentType());
+        if ("text".equalsIgnoreCase(type.getType()) && type.getCharset() == null) {
+            type = new MediaType(type, StandardCharsets.UTF_8);
+        }
         return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(metadata.getOriginalName(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
                 .contentType(type)
                 .body(resource);
     }
@@ -62,7 +71,10 @@ public class FileController {
         FileMetadata metadata = fileService.getById(id);
         Resource resource = fileService.loadAsResource(id);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + metadata.getOriginalName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(metadata.getOriginalName(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
     }

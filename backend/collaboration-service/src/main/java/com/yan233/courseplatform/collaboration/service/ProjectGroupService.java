@@ -12,5 +12,6 @@ public interface ProjectGroupService extends IService<ProjectGroup> {
     ProjectGroup updateGroup(Long id, ProjectGroupRequest request);
 
     ProjectMember join(Long groupId, JoinGroupRequest request);
-}
 
+    void leave(Long groupId, Long userId);
+}

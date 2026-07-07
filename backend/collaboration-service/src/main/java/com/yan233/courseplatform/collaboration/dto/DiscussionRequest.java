@@ -11,8 +11,6 @@ public class DiscussionRequest {
     private Long courseId;
     private Long groupId;
     private Long parentId;
-    @NotNull
-    private Long authorId;
     @NotBlank
     @Size(max = 120)
     private String title;

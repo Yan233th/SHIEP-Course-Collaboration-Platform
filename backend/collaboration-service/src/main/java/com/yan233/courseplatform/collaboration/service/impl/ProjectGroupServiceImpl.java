@@ -70,22 +70,32 @@ public class ProjectGroupServiceImpl extends ServiceImpl<ProjectGroupMapper, Pro
             if (group == null || group.getStatus() == 0) {
                 throw new BusinessException("项目组不可用");
             }
-            Long exists = memberMapper.selectCount(new LambdaQueryWrapper<ProjectMember>()
+            // 用 status 标记是否在组，deleted 始终保持 0，避免 (group_id, user_id, deleted)
+            // 唯一索引在反复加入/退出时撞键。退出过的成员(status=0)可重新加入。
+            ProjectMember existing = memberMapper.selectOne(new LambdaQueryWrapper<ProjectMember>()
                     .eq(ProjectMember::getGroupId, groupId)
                     .eq(ProjectMember::getUserId, request.getUserId()));
-            if (exists > 0) {
+            if (existing != null && existing.getStatus() != null && existing.getStatus() == 1) {
                 throw new BusinessException("用户已加入该项目组");
             }
             if (group.getCurrentMembers() >= group.getMaxMembers()) {
                 throw new BusinessException("项目组人数已满");
             }
-            ProjectMember member = new ProjectMember();
-            member.setGroupId(groupId);
-            member.setUserId(request.getUserId());
-            member.setRoleName(request.getRoleName());
-            member.setStatus(1);
-            member.setDeleted(0);
-            memberMapper.insert(member);
+            ProjectMember member;
+            if (existing != null) {
+                existing.setStatus(1);
+                existing.setRoleName(request.getRoleName());
+                memberMapper.updateById(existing);
+                member = existing;
+            } else {
+                member = new ProjectMember();
+                member.setGroupId(groupId);
+                member.setUserId(request.getUserId());
+                member.setRoleName(request.getRoleName());
+                member.setStatus(1);
+                member.setDeleted(0);
+                memberMapper.insert(member);
+            }
             group.setCurrentMembers(group.getCurrentMembers() + 1);
             updateById(group);
             return member;
@@ -96,5 +106,37 @@ public class ProjectGroupServiceImpl extends ServiceImpl<ProjectGroupMapper, Pro
             }
         }
     }
-}
 
+    @Override
+    @Transactional
+    public void leave(Long groupId, Long userId) {
+        String lockKey = "lock:project-group:" + groupId;
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, Duration.ofSeconds(10));
+        if (!Boolean.TRUE.equals(locked)) {
+            throw new BusinessException(429, "项目组正在更新，请稍后重试");
+        }
+        try {
+            ProjectGroup group = getById(groupId);
+            if (group == null || group.getStatus() == 0) {
+                throw new BusinessException("项目组不可用");
+            }
+            ProjectMember member = memberMapper.selectOne(new LambdaQueryWrapper<ProjectMember>()
+                    .eq(ProjectMember::getGroupId, groupId)
+                    .eq(ProjectMember::getUserId, userId));
+            if (member == null || member.getStatus() == null || member.getStatus() == 0) {
+                throw new BusinessException("用户不在该项目组中");
+            }
+            // 软删除：置 status=0，保留行，保持 deleted=0 不变，避免唯一索引冲突
+            member.setStatus(0);
+            memberMapper.updateById(member);
+            group.setCurrentMembers(Math.max(0, group.getCurrentMembers() - 1));
+            updateById(group);
+        } finally {
+            String current = redisTemplate.opsForValue().get(lockKey);
+            if (lockValue.equals(current)) {
+                redisTemplate.delete(lockKey);
+            }
+        }
+    }
+}

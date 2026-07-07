@@ -15,7 +15,14 @@
 
     <el-table :data="assignments" height="320px" empty-text="暂无作业">
       <el-table-column prop="title" label="作业" />
-      <el-table-column prop="dueTime" label="截止时间" width="190" />
+      <el-table-column label="说明" min-width="220">
+        <template #default="{ row }">
+          <span class="table-ellipsis">{{ row.description || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="截止时间" width="160">
+        <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
+      </el-table-column>
       <el-table-column prop="totalScore" label="总分" width="90" />
       <el-table-column label="操作" width="150">
         <template #default="{ row }">
@@ -24,6 +31,24 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <section v-if="selectedAssignment" class="assignment-detail">
+      <div>
+        <span>作业说明</span>
+        <strong>{{ selectedAssignment.title }}</strong>
+      </div>
+      <p>{{ selectedAssignment.description || '暂无说明' }}</p>
+      <dl>
+        <div>
+          <dt>截止时间</dt>
+          <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
+        </div>
+        <div>
+          <dt>总分</dt>
+          <dd>{{ selectedAssignment.totalScore }}</dd>
+        </div>
+      </dl>
+    </section>
 
     <section v-if="selectedAssignment" class="submissions-section">
       <div class="section-heading compact subsection-heading">
@@ -136,6 +161,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check, Plus, Upload } from '@element-plus/icons-vue'
+import dayjs from 'dayjs'
 import { courseService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import type { Assignment, Submission } from '../types'
@@ -152,6 +178,10 @@ const gradeForm = reactive({ score: 0, feedback: '' })
 const selectedAssignment = computed(() => assignments.value.find((assignment) => assignment.id === submissionForm.assignmentId))
 const canCreateAssignment = computed(() => Boolean(assignmentForm.title.trim() && assignmentForm.dueTime))
 const canCreateSubmission = computed(() => Boolean(submissionForm.assignmentId && submissionForm.content.trim()))
+
+function formatDueTime(value?: string) {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'
+}
 
 async function loadAssignments() {
   assignments.value = await courseService.getAssignments(currentCourseId.value)

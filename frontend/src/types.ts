@@ -120,12 +120,23 @@ export interface ProjectGroup {
   maxMembers: number
 }
 
+export interface ProjectMember {
+  id: number
+  groupId: number
+  userId: number
+  roleName: string
+  status: number
+}
+
 export interface Discussion {
   id: number
   courseId: number
+  groupId?: number
+  parentId?: number
   title: string
   content: string
   authorId: number
+  createTime?: string
 }
 
 export interface Showcase {

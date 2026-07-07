@@ -10,6 +10,7 @@ import type {
   Notice,
   Page,
   ProjectGroup,
+  ProjectMember,
   ResourceItem,
   Session,
   Showcase,
@@ -156,6 +157,12 @@ export const collaborationService = {
   },
   joinGroup(groupId: number, payload: { userId: number; roleName: string }) {
     return unwrap<void>(http.post(`/projects/groups/${groupId}/join`, payload))
+  },
+  leaveGroup(groupId: number) {
+    return unwrap<void>(http.delete(`/projects/groups/${groupId}/members/me`))
+  },
+  getGroupMembers(groupId: number) {
+    return unwrap<ProjectMember[]>(http.get(`/projects/groups/${groupId}/members`))
   },
   getDiscussions(courseId: number) {
     return unwrap<Discussion[]>(http.get('/discussions', { params: { courseId } }))
