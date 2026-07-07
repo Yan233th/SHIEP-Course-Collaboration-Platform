@@ -4,7 +4,7 @@
       <RouterLink class="brand" to="/dashboard">
         <span class="brand-copy">
           <strong>课程协同</strong>
-          <small>Course Workspace</small>
+          <small>教学协作管理</small>
         </span>
       </RouterLink>
 
