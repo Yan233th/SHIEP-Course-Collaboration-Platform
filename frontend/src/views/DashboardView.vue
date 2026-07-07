@@ -76,7 +76,7 @@
             <strong>{{ roleLabel(appState.courseAccess?.courseRole) }}</strong>
           </div>
           <div>
-            <span>容量占用</span>
+            <span>课程容量</span>
             <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
           </div>
         </div>
@@ -177,7 +177,7 @@ const metrics = computed(() => [
   {
     label: '当前课程人数',
     value: selectedCourse.value?.currentStudents ?? 0,
-    caption: `容量 ${selectedCourse.value?.maxStudents ?? '-'}`,
+    caption: `上限 ${selectedCourse.value?.maxStudents ?? '-'} 人`,
     icon: Connection,
     tone: 'tone-blue'
   },

@@ -1299,7 +1299,7 @@ body {
   color: var(--app-ink-strong);
   font-family: var(--app-font-sans);
   font-size: clamp(34px, 5vw, 54px);
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.04;
   letter-spacing: 0;
   text-wrap: balance;
@@ -1355,7 +1355,7 @@ body {
   color: var(--app-ink-strong);
   font-family: var(--app-font-sans);
   font-size: 24px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0;
 }
@@ -1412,7 +1412,7 @@ body {
 .brand .brand-copy strong {
   font-family: var(--app-font-sans);
   font-size: 18px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.05;
 }
 
@@ -1533,7 +1533,7 @@ body {
   color: var(--app-ink-strong);
   font-family: var(--app-font-sans);
   font-size: 20px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.16;
 }
 
@@ -1578,7 +1578,7 @@ body {
   color: var(--app-ink-strong);
   font-family: var(--app-font-sans);
   font-size: 28px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.12;
   letter-spacing: 0;
 }
@@ -1605,7 +1605,7 @@ body {
 .dashboard-course-summary strong {
   font-family: var(--app-font-sans);
   font-size: 18px;
-  font-weight: 750;
+  font-weight: 650;
 }
 
 .metric-grid {
@@ -1623,7 +1623,7 @@ body {
 .metric-card strong {
   font-family: var(--app-font-sans);
   font-size: 30px;
-  font-weight: 750;
+  font-weight: 650;
   line-height: 1;
 }
 
@@ -1735,7 +1735,7 @@ body {
 
 .el-button {
   border-radius: 7px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .el-button--default {
@@ -1761,7 +1761,7 @@ body {
 
 .el-tag {
   border-radius: 7px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .el-progress-bar__inner {
@@ -1819,5 +1819,67 @@ body {
 
   .quick-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.course-context {
+  min-width: 500px;
+  grid-template-columns: 78px minmax(310px, 1fr) 36px;
+  gap: 9px;
+  padding: 8px;
+  border-color: rgb(var(--app-brand-rgb) / 34%);
+  background: var(--app-brand-soft);
+}
+
+.course-context-label {
+  font-size: 12px;
+}
+
+.course-context-select .el-select__wrapper {
+  min-height: 40px;
+  background: var(--app-surface-raised);
+  box-shadow:
+    0 0 0 1px rgb(var(--app-brand-rgb) / 18%) inset,
+    0 1px 2px rgb(25 33 38 / 5%);
+}
+
+.course-context-select .el-select__wrapper:hover,
+.course-context-select .el-select__wrapper.is-focused {
+  box-shadow:
+    0 0 0 1px rgb(var(--app-brand-rgb) / 52%) inset,
+    0 3px 10px rgb(25 33 38 / 7%);
+}
+
+.course-context-select .el-select__selected-item {
+  color: var(--app-ink-strong);
+  font-weight: 600;
+}
+
+.course-context .icon-button {
+  height: 40px;
+}
+
+.status-list strong,
+.profile-detail-list dd,
+.el-table .cell {
+  font-weight: 500;
+}
+
+.metric-card strong,
+.dashboard-course-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1180px) {
+  .course-context {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: 78px minmax(220px, 1fr) 36px;
+  }
+}
+
+@media (max-width: 760px) {
+  .course-context {
+    grid-template-columns: minmax(0, 1fr) 36px;
   }
 }

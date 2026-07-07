@@ -47,7 +47,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="userDialog" :title="editingUser ? '编辑用户' : '新增用户'" width="560px">
+    <el-dialog v-model="userDialog" :title="editingUser ? '编辑用户' : '新增用户'" width="560px" append-to-body>
       <el-form :model="userForm" label-width="88px">
         <el-form-item label="账号"><el-input v-model="userForm.username" /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="userForm.realName" /></el-form-item>

@@ -54,8 +54,10 @@
             <span class="course-context-label">当前课程</span>
             <el-select
               ref="courseSelectRef"
+              class="course-context-select"
               v-model="currentCourseModel"
               filterable
+              size="large"
               placeholder="选择课程"
               :loading="appState.courseAccessLoading"
               @visible-change="courseSelectOpen = $event"
@@ -93,7 +95,15 @@ const router = useRouter()
 const courseSelectRef = ref<{ blur: () => void; toggleMenu: (event?: Event) => void } | null>(null)
 const courseSelectOpen = ref(false)
 
-const pageTitle = computed(() => typeof route.meta.title === 'string' ? route.meta.title : '工作台')
+const pageTitle = computed(() => {
+  if (route.path === '/dashboard' || route.path === '/profile') {
+    return typeof route.meta.title === 'string' ? route.meta.title : '工作台'
+  }
+  const section = appState.menus.find((menu) =>
+    menu.path === route.path || menu.children.some((child) => child.path === route.path)
+  )
+  return section?.title || (typeof route.meta.title === 'string' ? route.meta.title : '工作台')
+})
 const showCourseContext = computed(() => Boolean(route.meta.courseScoped))
 const currentCourseModel = computed({
   get: () => currentCourseId.value,

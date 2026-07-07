@@ -2,7 +2,7 @@
   <section class="panel">
     <div class="section-heading">
       <div>
-        <h2>课程空间</h2>
+        <h2>课程列表</h2>
         <p>维护课程基础信息，选中一门课后其他模块会跟随切换。</p>
       </div>
       <strong>{{ courses.total }} 门</strong>
@@ -41,7 +41,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="courseDialog" :title="courseDialogTitle" width="560px">
+    <el-dialog v-model="courseDialog" :title="courseDialogTitle" width="560px" append-to-body>
       <el-form :model="courseForm" label-width="88px">
         <el-form-item label="课程编号"><el-input v-model="courseForm.courseCode" /></el-form-item>
         <el-form-item label="课程名称"><el-input v-model="courseForm.courseName" /></el-form-item>
