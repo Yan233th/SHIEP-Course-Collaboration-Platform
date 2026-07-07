@@ -2,18 +2,36 @@
   <section class="panel">
     <div class="section-heading compact">
       <div>
-        <h2>讨论交流</h2>
+        <h2>组内讨论</h2>
         <p>{{ currentCourseLabel }}</p>
       </div>
       <div class="heading-actions">
-        <strong>{{ discussions.length }} 条</strong>
-        <el-button v-if="can('CREATE_DISCUSSION')" type="primary" :icon="Plus" @click="openDiscussionDrawer()">
+        <strong v-if="selectedGroupId">{{ discussions.length }} 条</strong>
+        <el-select
+          v-if="accessibleGroups.length"
+          v-model="selectedGroupId"
+          placeholder="选择项目组"
+          style="width: 200px"
+          @change="onGroupChange"
+        >
+          <el-option v-for="group in accessibleGroups" :key="group.id" :label="group.name" :value="group.id" />
+        </el-select>
+        <el-button
+          v-if="can('CREATE_DISCUSSION') && selectedGroupId"
+          type="primary"
+          :icon="Plus"
+          @click="openDiscussionDrawer()"
+        >
           发起讨论
         </el-button>
       </div>
     </div>
 
-    <el-table :data="discussions" height="calc(100vh - 270px)" empty-text="暂无讨论">
+    <div v-if="!accessibleGroups.length" class="empty-inline">
+      你还没有加入任何项目组，加入后即可在组内讨论。
+    </div>
+    <div v-else-if="!selectedGroupId" class="empty-inline">请选择一个项目组查看讨论。</div>
+    <el-table v-else :data="discussions" height="calc(100vh - 270px)" empty-text="暂无讨论">
       <el-table-column label="主题" min-width="220">
         <template #default="{ row }">
           <div class="discussion-title-cell">
@@ -63,13 +81,14 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { collaborationService } from '../services/platform'
 import { can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
-import type { Discussion } from '../types'
+import type { Discussion, ProjectGroup } from '../types'
 
 const discussions = ref<Discussion[]>([])
+const accessibleGroups = ref<ProjectGroup[]>([])
+const selectedGroupId = ref<number | undefined>(undefined)
 const discussionDrawer = ref(false)
 const replyingDiscussion = ref<Discussion | null>(null)
 const discussionForm = reactive({
-  groupId: undefined as number | undefined,
   parentId: undefined as number | undefined,
   title: '',
   content: '',
@@ -77,17 +96,34 @@ const discussionForm = reactive({
 })
 const canCreateDiscussion = computed(() => Boolean((replyingDiscussion.value || discussionForm.title.trim()) && discussionForm.content.trim()))
 
+async function loadAccessibleGroups() {
+  accessibleGroups.value = await collaborationService.getAccessibleGroups(currentCourseId.value)
+  // 默认选中第一个可访问的组；若当前已选的组不在列表里则重置
+  if (!selectedGroupId.value || !accessibleGroups.value.some((group) => group.id === selectedGroupId.value)) {
+    selectedGroupId.value = accessibleGroups.value[0]?.id
+  }
+  await loadDiscussions()
+}
+
 async function loadDiscussions() {
-  discussions.value = await collaborationService.getDiscussions(currentCourseId.value)
+  if (!selectedGroupId.value) {
+    discussions.value = []
+    return
+  }
+  discussions.value = await collaborationService.getDiscussions(selectedGroupId.value)
+}
+
+function onGroupChange() {
+  resetDiscussionForm()
+  void loadDiscussions()
 }
 
 function openDiscussionDrawer(parent?: Discussion) {
   resetDiscussionForm()
   if (parent) {
     replyingDiscussion.value = parent
-    discussionForm.groupId = parent.groupId
     discussionForm.parentId = parent.id
-    // 不加"回复："前缀，避免和"回复"标签里的字重复；标签已标识为回复
+    // 回复标题沿用父主题标题，不加"回复："前缀，避免和"回复"标签字样重复
     discussionForm.title = parent.title
   }
   discussionDrawer.value = true
@@ -95,7 +131,6 @@ function openDiscussionDrawer(parent?: Discussion) {
 
 function resetDiscussionForm() {
   replyingDiscussion.value = null
-  discussionForm.groupId = undefined
   discussionForm.parentId = undefined
   discussionForm.title = ''
   discussionForm.content = ''
@@ -103,9 +138,10 @@ function resetDiscussionForm() {
 }
 
 async function createDiscussion() {
+  if (!selectedGroupId.value) return
   await collaborationService.createDiscussion({
     courseId: currentCourseId.value,
-    groupId: discussionForm.groupId,
+    groupId: selectedGroupId.value,
     parentId: discussionForm.parentId,
     title: discussionForm.title,
     content: discussionForm.content,
@@ -116,10 +152,11 @@ async function createDiscussion() {
   await loadDiscussions()
 }
 
-onMounted(loadDiscussions)
+onMounted(loadAccessibleGroups)
 watch([currentCourseId, refreshSignal], () => {
   discussionDrawer.value = false
+  selectedGroupId.value = undefined
   resetDiscussionForm()
-  void loadDiscussions()
+  void loadAccessibleGroups()
 })
 </script>

@@ -9,6 +9,7 @@ import lombok.Data;
 public class DiscussionRequest {
     @NotNull
     private Long courseId;
+    @NotNull
     private Long groupId;
     private Long parentId;
     @NotBlank

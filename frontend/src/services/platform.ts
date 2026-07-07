@@ -168,8 +168,11 @@ export const collaborationService = {
   getGroupMemberDetails(groupId: number) {
     return unwrap<ProjectMemberDetail[]>(http.get(`/projects/groups/${groupId}/member-details`))
   },
-  getDiscussions(courseId: number) {
-    return unwrap<Discussion[]>(http.get('/discussions', { params: { courseId } }))
+  getDiscussions(groupId: number) {
+    return unwrap<Discussion[]>(http.get('/discussions', { params: { groupId } }))
+  },
+  getAccessibleGroups(courseId: number) {
+    return unwrap<ProjectGroup[]>(http.get('/projects/groups/accessible', { params: { courseId } }))
   },
   createDiscussion(payload: Record<string, unknown>) {
     return unwrap<Discussion>(http.post('/discussions', payload))

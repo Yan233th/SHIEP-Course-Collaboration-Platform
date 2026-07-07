@@ -205,7 +205,7 @@ CREATE TABLE project_member (
 CREATE TABLE discussion_post (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   course_id BIGINT NOT NULL,
-  group_id BIGINT,
+  group_id BIGINT NOT NULL,
   parent_id BIGINT,
   author_id BIGINT NOT NULL,
   title VARCHAR(120) NOT NULL,

@@ -34,39 +34,36 @@ public class DiscussionController {
     }
 
     @GetMapping
-    public Result<List<DiscussionPost>> list(@RequestParam Long courseId,
-                                             @RequestParam(required = false) Long groupId,
-                                             HttpServletRequest servletRequest) {
-        accessService.requireCanViewCourse(courseId, UserContext.from(servletRequest));
+    public Result<List<DiscussionPost>> list(@RequestParam Long groupId, HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        accessService.requireCanAccessGroup(groupId, current);
         return Result.ok(mapper.selectList(new LambdaQueryWrapper<DiscussionPost>()
-                .eq(DiscussionPost::getCourseId, courseId)
-                .eq(groupId != null, DiscussionPost::getGroupId, groupId)
+                .eq(DiscussionPost::getGroupId, groupId)
                 .orderByDesc(DiscussionPost::getCreateTime)));
     }
 
     @PostMapping
     public Result<DiscussionPost> create(@RequestBody @Valid DiscussionRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
-        accessService.requireCanViewCourse(request.getCourseId(), current);
+        // 组内讨论：必须是该组成员、课程教师/助教或管理员
+        ProjectGroup group = accessService.requireCanAccessGroup(request.getGroupId(), current);
+        if (group.getStatus() == 0) {
+            throw new BusinessException(400, "该项目组不可用");
+        }
+        if (!group.getCourseId().equals(request.getCourseId())) {
+            throw new BusinessException(400, "项目组不属于该课程");
+        }
+        // 回复的主题必须属于同一项目组
         if (request.getParentId() != null) {
             DiscussionPost parent = mapper.selectById(request.getParentId());
-            if (parent == null || !request.getCourseId().equals(parent.getCourseId())) {
-                throw new BusinessException(400, "回复的主题不存在或不属于该课程");
-            }
-            if (request.getGroupId() == null) {
-                request.setGroupId(parent.getGroupId());
-            } else if (parent.getGroupId() != null && !parent.getGroupId().equals(request.getGroupId())) {
-                throw new BusinessException(400, "回复的主题不属于该项目组");
-            }
-        }
-        if (request.getGroupId() != null) {
-            ProjectGroup group = accessService.requireGroup(request.getGroupId());
-            if (group == null || group.getStatus() == 0 || !request.getCourseId().equals(group.getCourseId())) {
-                throw new BusinessException(400, "项目组不存在或不属于该课程");
+            if (parent == null || !request.getGroupId().equals(parent.getGroupId())) {
+                throw new BusinessException(400, "回复的主题不存在或不属于该项目组");
             }
         }
         DiscussionPost post = new DiscussionPost();
         BeanUtils.copyProperties(request, post);
+        post.setCourseId(group.getCourseId());
+        post.setGroupId(request.getGroupId());
         post.setAuthorId(current.userId());
         post.setDeleted(0);
         mapper.insert(post);

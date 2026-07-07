@@ -53,6 +53,22 @@ public class CollaborationAccessService {
         throw new BusinessException(403, "无权限维护该项目组内容");
     }
 
+    /**
+     * 组内讨论访问门槛：管理员、课程教师/助教、或该项目组成员才能访问。
+     * 用于讨论这种"组内私有"内容；项目组目录信息仍用 requireCanViewGroup。
+     */
+    public ProjectGroup requireCanAccessGroup(Long groupId, CurrentUser currentUser) {
+        ProjectGroup group = requireGroup(groupId);
+        if (currentUser != null && currentUser.isAdmin()) {
+            return group;
+        }
+        String role = courseRole(group.getCourseId(), currentUser);
+        if ("TEACHER".equals(role) || "TA".equals(role) || isProjectMember(groupId, currentUser)) {
+            return group;
+        }
+        throw new BusinessException(403, "无权限访问该项目组讨论");
+    }
+
     public ProjectGroup requireGroup(Long groupId) {
         ProjectGroup group = groupMapper.selectById(groupId);
         if (group == null) {

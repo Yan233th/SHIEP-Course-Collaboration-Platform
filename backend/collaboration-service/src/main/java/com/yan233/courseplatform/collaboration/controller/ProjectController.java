@@ -52,6 +52,27 @@ public class ProjectController {
                 .orderByDesc(ProjectGroup::getCreateTime)));
     }
 
+    /**
+     * 当前用户可参与讨论的项目组：教师/助教/管理员可见课程下全部组（过程可见），
+     * 学生只返回已加入的组。供讨论页选择目标组使用。
+     */
+    @GetMapping("/groups/accessible")
+    public Result<List<ProjectGroup>> accessibleGroups(@RequestParam Long courseId, HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        accessService.requireCanViewCourse(courseId, current);
+        List<ProjectGroup> all = groupService.list(new LambdaQueryWrapper<ProjectGroup>()
+                .eq(ProjectGroup::getCourseId, courseId)
+                .orderByDesc(ProjectGroup::getCreateTime));
+        String role = accessService.courseRole(courseId, current);
+        boolean overseer = current.isAdmin() || "TEACHER".equals(role) || "TA".equals(role);
+        if (overseer) {
+            return Result.ok(all);
+        }
+        return Result.ok(all.stream()
+                .filter(group -> accessService.isProjectMember(group.getId(), current))
+                .toList());
+    }
+
     @PostMapping("/groups")
     public Result<ProjectGroup> create(@RequestBody @Valid ProjectGroupRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);

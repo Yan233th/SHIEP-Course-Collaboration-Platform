@@ -147,7 +147,7 @@ export interface ProjectMemberDetail {
 export interface Discussion {
   id: number
   courseId: number
-  groupId?: number
+  groupId: number
   parentId?: number
   title: string
   content: string
