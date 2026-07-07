@@ -40,7 +40,6 @@
     <el-container>
       <el-header class="topbar">
         <div class="page-title">
-          <span class="page-kicker">{{ pageScope }}</span>
           <strong>{{ pageTitle }}</strong>
           <div class="identity-strip">
             <span class="muted">{{ appState.session.realName }}</span>
@@ -96,11 +95,6 @@ const courseSelectOpen = ref(false)
 
 const pageTitle = computed(() => typeof route.meta.title === 'string' ? route.meta.title : '工作台')
 const showCourseContext = computed(() => Boolean(route.meta.courseScoped))
-const pageScope = computed(() => {
-  if (route.path.startsWith('/admin')) return '平台管理'
-  if (showCourseContext.value) return '课程空间'
-  return '总览'
-})
 const currentCourseModel = computed({
   get: () => currentCourseId.value,
   set: (value: number) => {

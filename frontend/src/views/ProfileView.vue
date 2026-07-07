@@ -2,9 +2,7 @@
   <section class="profile-page">
     <section class="profile-header">
       <div class="profile-heading">
-        <span class="section-label">账户资料</span>
         <h1>个人信息</h1>
-        <p>维护当前登录账号的基础资料和联系方式，账号身份由平台权限体系统一管理。</p>
       </div>
       <div class="profile-header-meta">
         <el-tag effect="plain">{{ roleLabel(profile?.roleCode || currentRole) }}</el-tag>
@@ -18,7 +16,6 @@
         <div class="section-heading">
           <div>
             <h2>基础资料</h2>
-            <p>这些信息用于课程成员、通知发布和协作记录中的姓名与联系方式展示。</p>
           </div>
           <el-tag :type="profile?.status === 1 ? 'success' : 'info'" effect="plain">{{ statusText }}</el-tag>
         </div>
@@ -62,7 +59,6 @@
         <div class="section-heading compact">
           <div>
             <h2>账号概览</h2>
-            <p>当前会话中的账号与权限摘要。</p>
           </div>
         </div>
         <dl class="profile-detail-list">

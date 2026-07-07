@@ -2,9 +2,7 @@
   <section class="dashboard">
     <section class="dashboard-header">
       <div class="dashboard-heading">
-        <span class="section-label">{{ hasSystemRole('ADMIN') ? '平台总览' : '课程工作台' }}</span>
         <h1>{{ dashboardTitle }}</h1>
-        <p>{{ dashboardSubtitle }}</p>
         <div class="dashboard-meta">
           <el-tag effect="plain">{{ roleLabel(currentRole) }}</el-tag>
           <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
@@ -44,7 +42,6 @@
         <div class="section-heading">
           <div>
             <h2>快速进入</h2>
-            <p>围绕当前课程处理教学协作事项。</p>
           </div>
         </div>
         <div class="quick-grid">
@@ -54,7 +51,6 @@
             </span>
             <span>
               <strong>{{ link.title }}</strong>
-              <small>{{ link.caption }}</small>
             </span>
           </RouterLink>
         </div>
@@ -94,7 +90,6 @@
       <div class="section-heading">
         <div>
           <h2>课程概览</h2>
-          <p>来自统计视图的课程资源与项目数据。</p>
         </div>
         <el-button :icon="Refresh" @click="loadStats">刷新</el-button>
       </div>
@@ -111,7 +106,6 @@
       <div class="section-heading">
         <div>
           <h2>当前课程</h2>
-          <p>课程基础信息与教学上下文。</p>
         </div>
       </div>
       <dl class="course-summary">
@@ -149,12 +143,6 @@ const currentCourseModel = computed({
 const dashboardTitle = computed(() => {
   if (hasSystemRole('ADMIN')) return '平台管理总览'
   return currentCourseLabel.value
-})
-const dashboardSubtitle = computed(() => {
-  if (hasSystemRole('ADMIN')) return '管理用户、课程和平台统计数据。'
-  if (hasSystemRole('TEACHER')) return '管理任课课程的通知、资源、作业和项目协作。'
-  if (hasSystemRole('TA')) return '协助教师维护课程内容、作业批改和讨论秩序。'
-  return '查看课程资料、提交作业、参与项目组和课程讨论。'
 })
 const permissionCount = computed(() => appState.courseAccess?.actions.length || 0)
 const courseRoleTagType = computed(() => {
@@ -202,18 +190,18 @@ const metrics = computed(() => [
 ])
 const quickLinks = computed(() => {
   const links = [
-    { title: '成员与权限', caption: '课程身份', to: '/courses/members', icon: Connection },
-    { title: '课程通知', caption: '公告同步', to: '/courses/notices', icon: Bell },
-    { title: '课程资源', caption: '分类标签', to: '/courses/resources', icon: Files },
-    { title: '作业与提交', caption: '发布提交', to: '/courses/assignments', icon: Notebook },
-    { title: '项目分组', caption: '协作小组', to: '/projects/groups', icon: Collection },
-    { title: '讨论交流', caption: '课程讨论', to: '/projects/discussions', icon: ChatDotRound },
-    { title: '成果展示', caption: '项目产出', to: '/projects/showcases', icon: Trophy }
+    { title: '成员与权限', to: '/courses/members', icon: Connection },
+    { title: '课程通知', to: '/courses/notices', icon: Bell },
+    { title: '课程资源', to: '/courses/resources', icon: Files },
+    { title: '作业与提交', to: '/courses/assignments', icon: Notebook },
+    { title: '项目分组', to: '/projects/groups', icon: Collection },
+    { title: '讨论交流', to: '/projects/discussions', icon: ChatDotRound },
+    { title: '成果展示', to: '/projects/showcases', icon: Trophy }
   ]
   if (!hasSystemRole('ADMIN')) return links
   return [
-    { title: '用户与角色', caption: '平台成员', to: '/admin/users', icon: User },
-    { title: '课程统计', caption: '数据概览', to: '/admin/stats', icon: DataAnalysis },
+    { title: '用户与角色', to: '/admin/users', icon: User },
+    { title: '课程统计', to: '/admin/stats', icon: DataAnalysis },
     ...links
   ]
 })
