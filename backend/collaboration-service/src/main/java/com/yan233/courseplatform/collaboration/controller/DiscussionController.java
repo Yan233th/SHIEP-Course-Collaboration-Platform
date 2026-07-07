@@ -59,6 +59,10 @@ public class DiscussionController {
             if (parent == null || !request.getGroupId().equals(parent.getGroupId())) {
                 throw new BusinessException(400, "回复的主题不存在或不属于该项目组");
             }
+            // 两级结构：只能回复话题，不能回复回复
+            if (parent.getParentId() != null) {
+                throw new BusinessException(400, "请直接在话题下回复，不支持回复回复");
+            }
         }
         DiscussionPost post = new DiscussionPost();
         BeanUtils.copyProperties(request, post);
