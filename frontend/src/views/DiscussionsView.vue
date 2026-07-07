@@ -51,33 +51,35 @@
 
       <!-- 右：选中帖子的内容 -->
       <section class="dz-read">
-        <div v-if="!activeTopic" class="dz-read-empty">选择左侧话题查看内容</div>
-        <template v-else>
-          <header class="dz-read-head">
-            <h3>{{ activeTopic.title }}</h3>
-            <span>{{ authorName(activeTopic) }}</span>
-          </header>
-          <div class="dz-read-body">
-            <article class="dz-post">
-              <p>{{ activeTopic.content }}</p>
-            </article>
-            <div class="dz-replies-head">楼层回复 · {{ repliesOf(activeTopic.id).length }}</div>
-            <div class="dz-replies">
-              <div v-for="(reply, i) in repliesOf(activeTopic.id)" :key="reply.id" class="dz-floor">
-                <div class="dz-floor-no">{{ i + 1 }}</div>
-                <div class="dz-floor-body">
-                  <div class="dz-floor-meta">{{ authorName(reply) }}</div>
-                  <p>{{ reply.content }}</p>
+        <Transition name="dz-show" mode="out-in">
+          <div v-if="!activeTopic" key="empty" class="dz-read-empty">选择左侧话题查看内容</div>
+          <div v-else :key="activeTopic.id" class="dz-read-inner">
+            <header class="dz-read-head">
+              <h3>{{ activeTopic.title }}</h3>
+              <span>{{ authorName(activeTopic) }}</span>
+            </header>
+            <div class="dz-read-body">
+              <article class="dz-post">
+                <p>{{ activeTopic.content }}</p>
+              </article>
+              <div class="dz-replies-head">楼层回复 · {{ repliesOf(activeTopic.id).length }}</div>
+              <div class="dz-replies">
+                <div v-for="(reply, i) in repliesOf(activeTopic.id)" :key="reply.id" class="dz-floor">
+                  <div class="dz-floor-no">{{ i + 1 }}</div>
+                  <div class="dz-floor-body">
+                    <div class="dz-floor-meta">{{ authorName(reply) }}</div>
+                    <p>{{ reply.content }}</p>
+                  </div>
                 </div>
+                <div v-if="!repliesOf(activeTopic.id).length" class="dz-empty">还没有回复，来说点什么</div>
               </div>
-              <div v-if="!repliesOf(activeTopic.id).length" class="dz-empty">还没有回复，来说点什么</div>
             </div>
+            <footer v-if="can('CREATE_DISCUSSION')" class="dz-reply">
+              <el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复该话题…" />
+              <el-button type="primary" :disabled="!replyContent.trim()" @click="submitReply">回复</el-button>
+            </footer>
           </div>
-          <footer v-if="can('CREATE_DISCUSSION')" class="dz-reply">
-            <el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复该话题…" />
-            <el-button type="primary" :disabled="!replyContent.trim()" @click="submitReply">回复</el-button>
-          </footer>
-        </template>
+        </Transition>
       </section>
     </div>
 
@@ -165,9 +167,9 @@ async function loadDiscussions() {
     return
   }
   discussions.value = await collaborationService.getDiscussions(selectedGroupId.value)
-  // 选中的话题不在列表里（切换组/新建后），回落到第一个
-  if (!topicList.value.some((t) => t.id === selectedTopicId.value)) {
-    selectedTopicId.value = topicList.value[0]?.id
+  // 默认不预选话题；仅当前选中失效时置空，由用户点选
+  if (selectedTopicId.value && !topicList.value.some((t) => t.id === selectedTopicId.value)) {
+    selectedTopicId.value = undefined
   }
 }
 
@@ -301,6 +303,12 @@ watch([currentCourseId, refreshSignal], () => {
   justify-content: center;
   color: #9ca3af;
 }
+.dz-read-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .dz-read-head {
   padding: 14px 18px;
   border-bottom: 1px solid #eef0f4;
@@ -377,5 +385,19 @@ watch([currentCourseId, refreshSignal], () => {
 }
 .dz-reply :deep(.el-textarea) {
   flex: 1;
+}
+
+/* 选中话题时右侧内容滑入（复用之前的 scale+fade 过渡） */
+.dz-show-enter-active,
+.dz-show-leave-active {
+  transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dz-show-enter-from {
+  opacity: 0;
+  transform: translateX(24px) scale(0.985);
+}
+.dz-show-leave-to {
+  opacity: 0;
+  transform: translateX(-12px) scale(0.985);
 }
 </style>
