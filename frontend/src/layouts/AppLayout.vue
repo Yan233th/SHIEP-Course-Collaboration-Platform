@@ -73,7 +73,7 @@
               <el-button class="icon-button" :icon="Refresh" aria-label="刷新当前页" @click="triggerRefresh" />
             </el-tooltip>
           </div>
-          <el-button class="logout-button" :icon="SwitchButton" @click="handleLogout">退出</el-button>
+          <el-button class="logout-button" :icon="SwitchButton" @click="handleLogout">登出</el-button>
         </div>
       </el-header>
 
