@@ -68,7 +68,13 @@ import type { Discussion } from '../types'
 const discussions = ref<Discussion[]>([])
 const discussionDrawer = ref(false)
 const replyingDiscussion = ref<Discussion | null>(null)
-const discussionForm = reactive({ groupId: 1, parentId: undefined as number | undefined, title: '', content: '', status: 1 })
+const discussionForm = reactive({
+  groupId: undefined as number | undefined,
+  parentId: undefined as number | undefined,
+  title: '',
+  content: '',
+  status: 1
+})
 const canCreateDiscussion = computed(() => Boolean((replyingDiscussion.value || discussionForm.title.trim()) && discussionForm.content.trim()))
 
 async function loadDiscussions() {
@@ -79,7 +85,7 @@ function openDiscussionDrawer(parent?: Discussion) {
   resetDiscussionForm()
   if (parent) {
     replyingDiscussion.value = parent
-    discussionForm.groupId = parent.groupId || 1
+    discussionForm.groupId = parent.groupId
     discussionForm.parentId = parent.id
     discussionForm.title = `回复：${parent.title}`
   }
@@ -88,7 +94,7 @@ function openDiscussionDrawer(parent?: Discussion) {
 
 function resetDiscussionForm() {
   replyingDiscussion.value = null
-  discussionForm.groupId = 1
+  discussionForm.groupId = undefined
   discussionForm.parentId = undefined
   discussionForm.title = ''
   discussionForm.content = ''
