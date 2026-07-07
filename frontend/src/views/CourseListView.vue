@@ -3,7 +3,6 @@
     <div class="section-heading">
       <div>
         <h2>课程列表</h2>
-        <p>维护课程基础信息，选中一门课后其他模块会跟随切换。</p>
       </div>
       <strong>{{ courses.total }} 门</strong>
     </div>
