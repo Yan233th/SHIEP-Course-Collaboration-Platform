@@ -1,17 +1,17 @@
 <template>
   <section class="profile-page">
-    <div class="profile-hero">
-      <div>
-        <p class="eyebrow">Account Settings</p>
+    <section class="profile-header">
+      <div class="profile-heading">
+        <span class="section-label">账户资料</span>
         <h1>个人信息</h1>
         <p>维护当前登录账号的基础资料和联系方式，账号身份由平台权限体系统一管理。</p>
       </div>
-      <div class="profile-identity">
-        <span>当前身份</span>
-        <strong>{{ roleLabel(profile?.roleCode || currentRole) }}</strong>
-        <small>{{ profile?.username || appState.session.username }}</small>
+      <div class="profile-header-meta">
+        <el-tag effect="plain">{{ roleLabel(profile?.roleCode || currentRole) }}</el-tag>
+        <el-tag :type="profile?.status === 1 ? 'success' : 'info'" effect="plain">{{ statusText }}</el-tag>
+        <span>{{ profile?.username || appState.session.username }}</span>
       </div>
-    </div>
+    </section>
 
     <div class="profile-grid">
       <section v-loading="loading" class="panel profile-form-panel">

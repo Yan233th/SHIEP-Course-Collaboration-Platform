@@ -1,11 +1,11 @@
 <template>
   <section class="dashboard">
-    <div class="dashboard-hero">
-      <div class="hero-main">
-        <p class="eyebrow">{{ heroKicker }}</p>
+    <section class="dashboard-header">
+      <div class="dashboard-heading">
+        <span class="section-label">{{ hasSystemRole('ADMIN') ? '平台总览' : '课程工作台' }}</span>
         <h1>{{ dashboardTitle }}</h1>
         <p>{{ dashboardSubtitle }}</p>
-        <div class="hero-meta">
+        <div class="dashboard-meta">
           <el-tag effect="plain">{{ roleLabel(currentRole) }}</el-tag>
           <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
             课程身份：{{ roleLabel(appState.courseAccess.courseRole) }}
@@ -13,8 +13,8 @@
           <el-tag effect="plain" type="info">{{ permissionCount }} 项权限</el-tag>
         </div>
       </div>
-      <div class="hero-context-card">
-        <span class="hero-context-label">当前课程</span>
+      <div class="dashboard-course-summary">
+        <span>当前课程</span>
         <strong>{{ currentCourseLabel }}</strong>
         <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
         <el-select v-model="currentCourseModel" filterable placeholder="选择课程">
@@ -26,7 +26,7 @@
           />
         </el-select>
       </div>
-    </div>
+    </section>
 
     <div class="metric-grid">
       <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
@@ -146,7 +146,6 @@ const currentCourseModel = computed({
     void setCurrentCourse(value)
   }
 })
-const heroKicker = computed(() => hasSystemRole('ADMIN') ? 'Platform Overview' : 'Course Workspace')
 const dashboardTitle = computed(() => {
   if (hasSystemRole('ADMIN')) return '平台管理总览'
   return currentCourseLabel.value
