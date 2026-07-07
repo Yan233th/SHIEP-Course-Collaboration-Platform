@@ -3,6 +3,7 @@
     <section class="dashboard-header">
       <div class="dashboard-heading">
         <h1>{{ dashboardTitle }}</h1>
+        <p>{{ dashboardLead }}</p>
         <div class="dashboard-meta">
           <el-tag effect="plain">{{ roleLabel(currentRole) }}</el-tag>
           <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
@@ -51,6 +52,7 @@
             </span>
             <span>
               <strong>{{ link.title }}</strong>
+              <small>{{ link.caption }}</small>
             </span>
           </RouterLink>
         </div>
@@ -144,6 +146,12 @@ const dashboardTitle = computed(() => {
   if (hasSystemRole('ADMIN')) return '平台管理总览'
   return currentCourseLabel.value
 })
+const dashboardLead = computed(() => {
+  if (hasSystemRole('ADMIN')) return '查看课程、成员、资源和项目协作的整体状态。'
+  const course = selectedCourse.value
+  if (!course) return '选择课程后进入成员、资源、作业和项目协作。'
+  return `${course.courseCode} · ${course.teacherName || '未设置教师'} · ${course.credit ?? '-'} 学分`
+})
 const permissionCount = computed(() => appState.courseAccess?.actions.length || 0)
 const courseRoleTagType = computed(() => {
   const role = appState.courseAccess?.courseRole
@@ -190,18 +198,18 @@ const metrics = computed(() => [
 ])
 const quickLinks = computed(() => {
   const links = [
-    { title: '成员与权限', to: '/courses/members', icon: Connection },
-    { title: '课程通知', to: '/courses/notices', icon: Bell },
-    { title: '课程资源', to: '/courses/resources', icon: Files },
-    { title: '作业与提交', to: '/courses/assignments', icon: Notebook },
-    { title: '项目分组', to: '/projects/groups', icon: Collection },
-    { title: '讨论交流', to: '/projects/discussions', icon: ChatDotRound },
-    { title: '成果展示', to: '/projects/showcases', icon: Trophy }
+    { title: '成员与权限', caption: '课程角色与访问控制', to: '/courses/members', icon: Connection },
+    { title: '课程通知', caption: '发布与查看课程公告', to: '/courses/notices', icon: Bell },
+    { title: '课程资源', caption: '资料、分类与标签', to: '/courses/resources', icon: Files },
+    { title: '作业与提交', caption: '作业发布、提交、评分', to: '/courses/assignments', icon: Notebook },
+    { title: '项目分组', caption: '课程项目协作分组', to: '/projects/groups', icon: Collection },
+    { title: '讨论交流', caption: '主题讨论与回复', to: '/projects/discussions', icon: ChatDotRound },
+    { title: '成果展示', caption: '项目成果与展示页', to: '/projects/showcases', icon: Trophy }
   ]
   if (!hasSystemRole('ADMIN')) return links
   return [
-    { title: '用户与角色', to: '/admin/users', icon: User },
-    { title: '课程统计', to: '/admin/stats', icon: DataAnalysis },
+    { title: '用户与角色', caption: '系统账号与角色维护', to: '/admin/users', icon: User },
+    { title: '课程统计', caption: '课程资源与协作统计', to: '/admin/stats', icon: DataAnalysis },
     ...links
   ]
 })
