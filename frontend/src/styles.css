@@ -1490,7 +1490,7 @@ body {
   background: transparent;
 }
 
-.sidebar .el-menu-item:hover::before {
+.sidebar .el-menu-item:not(.is-active):hover::before {
   opacity: 1;
   border-color: var(--app-brand-soft-strong);
   background: rgb(255 255 255 / 46%);
@@ -1518,7 +1518,14 @@ body {
 
 .sidebar .el-menu-item.is-active::before {
   opacity: 1;
+  border-color: rgb(var(--app-brand-rgb) / 18%);
+  background: rgb(var(--app-brand-rgb) / 13%);
   transform: translateX(3px);
+}
+
+.sidebar .el-menu-item.is-active:hover::before {
+  border-color: rgb(var(--app-brand-rgb) / 24%);
+  background: rgb(var(--app-brand-rgb) / 13%);
 }
 
 .sidebar .el-menu-item.is-active .menu-entry {
