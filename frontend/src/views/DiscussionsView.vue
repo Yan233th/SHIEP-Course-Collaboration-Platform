@@ -18,7 +18,7 @@
         <template #default="{ row }">
           <div class="discussion-title-cell">
             <el-tag v-if="row.parentId" size="small" effect="plain">回复</el-tag>
-            <span>{{ displayTitle(row) }}</span>
+            <span>{{ row.title }}</span>
           </div>
         </template>
       </el-table-column>
@@ -79,11 +79,6 @@ const canCreateDiscussion = computed(() => Boolean((replyingDiscussion.value || 
 
 async function loadDiscussions() {
   discussions.value = await collaborationService.getDiscussions(currentCourseId.value)
-}
-
-// 兼容历史数据：旧回复标题写作"回复：xxx"，和"回复"标签字样重复，显示时去掉前缀
-function displayTitle(row: Discussion) {
-  return row.parentId ? row.title.replace(/^回复：/, '') : row.title
 }
 
 function openDiscussionDrawer(parent?: Discussion) {
