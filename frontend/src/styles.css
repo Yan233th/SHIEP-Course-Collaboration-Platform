@@ -1493,12 +1493,12 @@ body {
 .sidebar .el-menu-item:not(.is-active):hover::before {
   opacity: 1;
   border-color: var(--app-brand-soft-strong);
-  background: rgb(255 255 255 / 46%);
+  background: rgb(255 255 255 / 28%);
 }
 
 .sidebar .el-sub-menu__title:hover {
   border-color: var(--app-brand-soft-strong);
-  background: rgb(255 255 255 / 46%);
+  background: rgb(255 255 255 / 28%);
 }
 
 .sidebar .el-sub-menu .el-menu-item {
