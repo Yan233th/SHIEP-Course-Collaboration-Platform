@@ -26,8 +26,8 @@
 
     <el-table :data="filteredMembers" height="calc(100vh - 292px)" empty-text="暂无课程成员">
       <el-table-column prop="userId" label="用户ID" width="90" />
-      <el-table-column prop="realName" label="姓名" width="130" />
-      <el-table-column prop="username" label="账号" width="150" />
+      <el-table-column prop="realName" label="姓名" min-width="150" />
+      <el-table-column prop="username" label="账号" min-width="190" />
       <el-table-column label="系统角色" width="110">
         <template #default="{ row }">
           <el-tag effect="plain">{{ roleLabel(row.systemRole) }}</el-tag>
