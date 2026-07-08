@@ -19,7 +19,15 @@
       <el-button v-if="hasSystemRole('ADMIN')" type="danger" :icon="Delete" :disabled="!selection.length" @click="batchDeleteCourses">批量删除</el-button>
     </div>
 
-    <el-table :data="courses.records" @row-click="selectCourse" @selection-change="selection = $event" height="calc(100vh - 270px)" empty-text="暂无课程">
+    <el-table
+      class="course-table"
+      :data="courses.records"
+      :row-class-name="courseRowClassName"
+      @row-click="selectCourse"
+      @selection-change="selection = $event"
+      height="calc(100vh - 270px)"
+      empty-text="暂无课程"
+    >
       <el-table-column v-if="hasSystemRole('ADMIN')" type="selection" width="44" />
       <el-table-column prop="courseCode" label="编号" width="150" />
       <el-table-column prop="courseName" label="课程名称" />
@@ -27,14 +35,13 @@
       <el-table-column prop="credit" label="学分" width="80" />
       <el-table-column prop="hours" label="学时" width="80" />
       <el-table-column prop="currentStudents" label="人数" width="90" />
-      <el-table-column label="上下文" width="92">
+      <el-table-column label="当前课程" width="92">
         <template #default="{ row }">
           <el-tag v-if="row.id === currentCourseId" type="success">当前</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column v-if="canMaintainCourses" label="操作" width="90" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click.stop="selectCourse(row)">进入</el-button>
           <el-button v-if="canEditCourse(row)" size="small" @click.stop="openEditDialog(row)">编辑</el-button>
         </template>
       </el-table-column>
@@ -92,6 +99,7 @@ const courseDialog = ref(false)
 const editingCourse = ref<Course | null>(null)
 const courseForm = reactive<CourseForm>(defaultCourseForm())
 const courseDialogTitle = computed(() => editingCourse.value ? '编辑课程' : '新增课程')
+const canMaintainCourses = computed(() => hasSystemRole('ADMIN') || courses.value.records.some((course) => canEditCourse(course)))
 
 function defaultCourseForm(): CourseForm {
   return {
@@ -112,8 +120,13 @@ async function loadCourses() {
 }
 
 function selectCourse(course: Course) {
+  if (course.id === currentCourseId.value) return
   void setCurrentCourse(course.id)
   ElMessage.success(`当前课程：${course.courseName}`)
+}
+
+function courseRowClassName({ row }: { row: Course }) {
+  return row.id === currentCourseId.value ? 'course-row-current' : ''
 }
 
 function canEditCourse(course: Course) {

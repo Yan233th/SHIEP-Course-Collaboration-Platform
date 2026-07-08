@@ -835,6 +835,14 @@ a {
   line-height: 1.55;
 }
 
+.course-table .el-table__row {
+  cursor: pointer;
+}
+
+.course-table .course-row-current > .el-table__cell {
+  background: rgb(var(--app-brand-rgb) / 5%);
+}
+
 .profile-page {
   display: grid;
   gap: 16px;
