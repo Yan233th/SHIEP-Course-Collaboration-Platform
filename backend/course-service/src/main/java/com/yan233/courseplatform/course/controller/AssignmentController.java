@@ -5,6 +5,9 @@ import com.yan233.courseplatform.common.api.Result;
 import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.dto.FileBrief;
+import com.yan233.courseplatform.common.dto.FileOwnerRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceReplaceRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceRequest;
 import com.yan233.courseplatform.common.exception.BusinessException;
 import com.yan233.courseplatform.common.web.UserContext;
 import com.yan233.courseplatform.course.client.FileFeignClient;
@@ -21,6 +24,7 @@ import com.yan233.courseplatform.course.service.CourseBizService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +45,9 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping
 public class AssignmentController {
+    private static final String ASSIGNMENT_OWNER = "ASSIGNMENT";
+    private static final String SUBMISSION_OWNER = "SUBMISSION";
+
     private final AssignmentMapper assignmentMapper;
     private final SubmissionMapper submissionMapper;
     private final CourseBizService courseService;
@@ -63,33 +70,43 @@ public class AssignmentController {
     }
 
     @PostMapping("/assignments")
+    @Transactional
     public Result<AssignmentView> createAssignment(@RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
         courseService.requireCourseStaff(request.getCourseId(), UserContext.from(servletRequest));
         Assignment assignment = new Assignment();
         BeanUtils.copyProperties(request, assignment);
         assignment.setDeleted(0);
         assignmentMapper.insert(assignment);
+        bindReference(assignment.getFileId(), ASSIGNMENT_OWNER, assignment.getId());
         return Result.ok(toAssignmentViews(List.of(assignment)).get(0));
     }
 
     @PutMapping("/assignments/{id}")
+    @Transactional
     public Result<AssignmentView> updateAssignment(@PathVariable Long id, @RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
         courseService.requireCourseStaff(request.getCourseId(), UserContext.from(servletRequest));
         Assignment assignment = assignmentMapper.selectById(id);
         if (assignment == null) {
             throw new BusinessException("作业不存在");
         }
+        Long oldFileId = assignment.getFileId();
         BeanUtils.copyProperties(request, assignment);
         assignment.setId(id);
         assignmentMapper.updateById(assignment);
+        replaceReference(oldFileId, assignment.getFileId(), ASSIGNMENT_OWNER, assignment.getId());
         return Result.ok(toAssignmentViews(List.of(assignment)).get(0));
     }
 
     @DeleteMapping("/assignments/{id}")
+    @Transactional
     public Result<Void> deleteAssignment(@PathVariable Long id, HttpServletRequest servletRequest) {
         Assignment assignment = assignmentMapper.selectById(id);
         if (assignment != null) {
             courseService.requireCourseStaff(assignment.getCourseId(), UserContext.from(servletRequest));
+            List<Submission> submissions = submissionMapper.selectList(new LambdaQueryWrapper<Submission>()
+                    .eq(Submission::getAssignmentId, id));
+            releaseOwner(ASSIGNMENT_OWNER, assignment.getId());
+            submissions.forEach(submission -> releaseOwner(SUBMISSION_OWNER, submission.getId()));
             submissionMapper.delete(new LambdaQueryWrapper<Submission>().eq(Submission::getAssignmentId, id));
         }
         assignmentMapper.deleteById(id);
@@ -97,6 +114,7 @@ public class AssignmentController {
     }
 
     @PostMapping("/submissions")
+    @Transactional
     public Result<SubmissionView> submit(@RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         Assignment assignment = requireAssignment(request.getAssignmentId());
@@ -114,6 +132,7 @@ public class AssignmentController {
         BeanUtils.copyProperties(request, submission);
         submission.setDeleted(0);
         submissionMapper.insert(submission);
+        bindReference(submission.getFileId(), SUBMISSION_OWNER, submission.getId());
         return Result.ok(toSubmissionViews(List.of(submission)).get(0));
     }
 
@@ -216,5 +235,32 @@ public class AssignmentController {
             return Collections.emptyMap();
         }
         return Collections.emptyMap();
+    }
+
+    private void bindReference(Long fileId, String ownerType, Long ownerId) {
+        if (fileId == null) {
+            return;
+        }
+        FileReferenceRequest request = new FileReferenceRequest();
+        request.setFileId(fileId);
+        request.setOwnerType(ownerType);
+        request.setOwnerId(ownerId);
+        fileFeignClient.bindReference(request);
+    }
+
+    private void replaceReference(Long oldFileId, Long newFileId, String ownerType, Long ownerId) {
+        FileReferenceReplaceRequest request = new FileReferenceReplaceRequest();
+        request.setOldFileId(oldFileId);
+        request.setNewFileId(newFileId);
+        request.setOwnerType(ownerType);
+        request.setOwnerId(ownerId);
+        fileFeignClient.replaceReference(request);
+    }
+
+    private void releaseOwner(String ownerType, Long ownerId) {
+        FileOwnerRequest request = new FileOwnerRequest();
+        request.setOwnerType(ownerType);
+        request.setOwnerId(ownerId);
+        fileFeignClient.releaseOwner(request);
     }
 }

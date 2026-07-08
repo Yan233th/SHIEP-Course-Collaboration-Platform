@@ -15,5 +15,6 @@ public interface FileStorageService extends IService<FileMetadata> {
     Resource loadAsResource(Long id);
 
     List<FileBrief> briefByIds(Collection<Long> ids);
-}
 
+    void deleteContent(FileMetadata metadata);
+}

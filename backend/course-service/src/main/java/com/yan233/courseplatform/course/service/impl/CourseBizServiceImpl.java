@@ -172,6 +172,17 @@ public class CourseBizServiceImpl extends ServiceImpl<CourseMapper, Course> impl
         return baseMapper.activityStats(courseId);
     }
 
+    @Override
+    public List<Map<String, Object>> assignmentSubmissionStats(Long courseId) {
+        return baseMapper.assignmentSubmissionStats(courseId);
+    }
+
+    @Override
+    public List<Map<String, Object>> auditHistory(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        return baseMapper.auditHistory(safeLimit);
+    }
+
     private void applyCourseFilters(LambdaQueryWrapper<Course> wrapper, CourseQuery query) {
         wrapper.and(query.getKeyword() != null && !query.getKeyword().isBlank(), w -> w
                 .like(Course::getCourseName, query.getKeyword())

@@ -3,10 +3,15 @@ package com.yan233.courseplatform.file.controller;
 import com.yan233.courseplatform.common.api.Result;
 import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.dto.FileBrief;
+import com.yan233.courseplatform.common.dto.FileOwnerRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceReplaceRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceRequest;
 import com.yan233.courseplatform.common.web.UserContext;
 import com.yan233.courseplatform.file.entity.FileMetadata;
+import com.yan233.courseplatform.file.service.FileLifecycleService;
 import com.yan233.courseplatform.file.service.FileStorageService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -15,21 +20,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/files")
 public class FileController {
     private final FileStorageService fileService;
+    private final FileLifecycleService lifecycleService;
 
-    public FileController(FileStorageService fileService) {
+    public FileController(FileStorageService fileService, FileLifecycleService lifecycleService) {
         this.fileService = fileService;
+        this.lifecycleService = lifecycleService;
     }
 
     @PostMapping("/upload")
@@ -82,5 +91,44 @@ public class FileController {
     @GetMapping("/internal/batch")
     public Result<List<FileBrief>> internalFiles(@RequestParam List<Long> ids) {
         return Result.ok(fileService.briefByIds(ids));
+    }
+
+    @PostMapping("/internal/references/bind")
+    public Result<Void> bindReference(@RequestBody @Valid FileReferenceRequest request) {
+        lifecycleService.bind(request);
+        return Result.ok();
+    }
+
+    @PostMapping("/internal/references/replace")
+    public Result<Void> replaceReference(@RequestBody @Valid FileReferenceReplaceRequest request) {
+        lifecycleService.replace(request);
+        return Result.ok();
+    }
+
+    @PostMapping("/internal/references/release")
+    public Result<Void> releaseReference(@RequestBody @Valid FileReferenceRequest request) {
+        lifecycleService.release(request);
+        return Result.ok();
+    }
+
+    @PostMapping("/internal/references/release-owner")
+    public Result<Void> releaseOwner(@RequestBody @Valid FileOwnerRequest request) {
+        lifecycleService.releaseOwner(request);
+        return Result.ok();
+    }
+
+    @PostMapping("/internal/gc/run")
+    public Result<Integer> runGc() {
+        return Result.ok(lifecycleService.processPendingGc());
+    }
+
+    @GetMapping("/internal/gc-stats")
+    public Result<List<Map<String, Object>>> gcStats() {
+        return Result.ok(lifecycleService.gcStats());
+    }
+
+    @GetMapping("/internal/status")
+    public Result<List<Map<String, Object>>> fileStatuses() {
+        return Result.ok(lifecycleService.fileStatuses());
     }
 }

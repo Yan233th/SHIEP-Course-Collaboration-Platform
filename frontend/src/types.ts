@@ -185,9 +185,54 @@ export interface Showcase {
 }
 
 export interface CourseStats {
+  course_id: number
+  course_code: string
   course_name: string
+  teacher_name: string
   member_count: number
   resource_count: number
   assignment_count: number
   project_group_count: number
+}
+
+export interface ActivityStat {
+  item_type: string
+  item_count: number
+}
+
+export interface AssignmentSubmissionStat {
+  assignment_id: number
+  course_id: number
+  title: string
+  submitted_count: number
+  graded_count: number
+  avg_score?: number | null
+}
+
+export interface AuditHistory {
+  id: number
+  table_name: string
+  record_id: number
+  action_type: string
+  snapshot?: unknown
+  create_time: string
+}
+
+export interface FileResourceStatus {
+  file_id: number
+  original_name: string
+  biz_type: string
+  size_bytes: number
+  uploader_id: number
+  file_deleted: number
+  active_reference_count: number
+  pending_gc_count: number
+  last_processed_time?: string | null
+  lifecycle_status: string
+}
+
+export interface FileGcStat {
+  lifecycle_status: string
+  file_count: number
+  total_size_bytes: number
 }

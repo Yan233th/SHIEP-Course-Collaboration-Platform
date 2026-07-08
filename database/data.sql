@@ -56,3 +56,7 @@ INSERT INTO discussion_post (course_id, group_id, parent_id, author_id, title, c
 
 INSERT INTO showcase (course_id, group_id, file_id, title, summary, link_url, status) VALUES
   (1, 1, NULL, '课程协同管理平台原型', '展示课程、作业、项目和讨论统一管理。', 'https://example.com/demo', 1);
+
+INSERT INTO file_reference (file_id, owner_type, owner_id, status) VALUES
+  (1, 'COURSE_RESOURCE', 1, 1),
+  (2, 'ASSIGNMENT', 1, 1);

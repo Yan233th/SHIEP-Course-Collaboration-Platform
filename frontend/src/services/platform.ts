@@ -1,6 +1,9 @@
 import { http, unwrap } from './http'
 import type {
   Assignment,
+  ActivityStat,
+  AssignmentSubmissionStat,
+  AuditHistory,
   Course,
   CourseAccess,
   CourseMember,
@@ -17,7 +20,9 @@ import type {
   Showcase,
   Submission,
   UserRow,
-  FileBrief
+  FileBrief,
+  FileGcStat,
+  FileResourceStatus
 } from '../types'
 
 export interface UserQuery {
@@ -165,6 +170,24 @@ export const courseService = {
   },
   getStats() {
     return unwrap<CourseStats[]>(http.get('/stats/course-overview'))
+  },
+  getActivityStats(courseId: number) {
+    return unwrap<ActivityStat[]>(http.get('/stats/course-activity', { params: { courseId } }))
+  },
+  getAssignmentSubmissionStats(courseId: number) {
+    return unwrap<AssignmentSubmissionStat[]>(http.get('/stats/assignment-submissions', { params: { courseId } }))
+  },
+  getAuditHistory(limit = 30) {
+    return unwrap<AuditHistory[]>(http.get('/stats/audit-history', { params: { limit } }))
+  },
+  getFileStatus() {
+    return unwrap<FileResourceStatus[]>(http.get('/stats/file-status'))
+  },
+  getFileGcStats() {
+    return unwrap<FileGcStat[]>(http.get('/stats/file-gc'))
+  },
+  runFileGc() {
+    return unwrap<number>(http.post('/stats/file-gc/run'))
   }
 }
 

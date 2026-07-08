@@ -1,24 +1,15 @@
-package com.yan233.courseplatform.course.client;
+package com.yan233.courseplatform.collaboration.client;
 
 import com.yan233.courseplatform.common.api.Result;
-import com.yan233.courseplatform.common.dto.FileBrief;
 import com.yan233.courseplatform.common.dto.FileOwnerRequest;
 import com.yan233.courseplatform.common.dto.FileReferenceReplaceRequest;
 import com.yan233.courseplatform.common.dto.FileReferenceRequest;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
-import java.util.Map;
-
-@FeignClient(name = "file-service", contextId = "courseFileClient")
+@FeignClient(name = "file-service", contextId = "collaborationFileClient")
 public interface FileFeignClient {
-    @GetMapping("/files/internal/batch")
-    Result<List<FileBrief>> filesByIds(@RequestParam("ids") List<Long> ids);
-
     @PostMapping("/files/internal/references/bind")
     Result<Void> bindReference(@RequestBody FileReferenceRequest request);
 
@@ -27,13 +18,4 @@ public interface FileFeignClient {
 
     @PostMapping("/files/internal/references/release-owner")
     Result<Void> releaseOwner(@RequestBody FileOwnerRequest request);
-
-    @PostMapping("/files/internal/gc/run")
-    Result<Integer> runGc();
-
-    @GetMapping("/files/internal/gc-stats")
-    Result<List<Map<String, Object>>> gcStats();
-
-    @GetMapping("/files/internal/status")
-    Result<List<Map<String, Object>>> fileStatuses();
 }

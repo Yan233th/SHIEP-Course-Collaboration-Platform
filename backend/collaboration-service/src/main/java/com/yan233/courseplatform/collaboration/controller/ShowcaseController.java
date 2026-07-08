@@ -1,6 +1,7 @@
 package com.yan233.courseplatform.collaboration.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yan233.courseplatform.collaboration.client.FileFeignClient;
 import com.yan233.courseplatform.collaboration.dto.ShowcaseRequest;
 import com.yan233.courseplatform.collaboration.entity.Showcase;
 import com.yan233.courseplatform.collaboration.mapper.ShowcaseMapper;
@@ -8,12 +9,20 @@ import com.yan233.courseplatform.collaboration.service.CollaborationAccessServic
 import com.yan233.courseplatform.common.api.Result;
 import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
+import com.yan233.courseplatform.common.dto.FileOwnerRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceReplaceRequest;
+import com.yan233.courseplatform.common.dto.FileReferenceRequest;
+import com.yan233.courseplatform.common.exception.BusinessException;
 import com.yan233.courseplatform.common.web.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,12 +33,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/showcases")
 public class ShowcaseController {
+    private static final String OWNER_TYPE = "SHOWCASE";
+
     private final ShowcaseMapper mapper;
     private final CollaborationAccessService accessService;
+    private final FileFeignClient fileFeignClient;
 
-    public ShowcaseController(ShowcaseMapper mapper, CollaborationAccessService accessService) {
+    public ShowcaseController(ShowcaseMapper mapper, CollaborationAccessService accessService, FileFeignClient fileFeignClient) {
         this.mapper = mapper;
         this.accessService = accessService;
+        this.fileFeignClient = fileFeignClient;
     }
 
     @GetMapping
@@ -47,6 +60,7 @@ public class ShowcaseController {
     }
 
     @PostMapping
+    @Transactional
     public Result<Showcase> create(@RequestBody @Valid ShowcaseRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         accessService.requireCanViewCourse(request.getCourseId(), current);
@@ -55,6 +69,71 @@ public class ShowcaseController {
         BeanUtils.copyProperties(request, showcase);
         showcase.setDeleted(0);
         mapper.insert(showcase);
+        bindReference(showcase.getFileId(), showcase.getId());
         return Result.ok(showcase);
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public Result<Showcase> update(@PathVariable Long id,
+                                   @RequestBody @Valid ShowcaseRequest request,
+                                   HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        Showcase showcase = requireShowcase(id);
+        accessService.requireCanViewCourse(request.getCourseId(), current);
+        accessService.requireProjectWritable(showcase.getGroupId(), current);
+        accessService.requireProjectWritable(request.getGroupId(), current);
+        Long oldFileId = showcase.getFileId();
+        BeanUtils.copyProperties(request, showcase);
+        showcase.setId(id);
+        mapper.updateById(showcase);
+        replaceReference(oldFileId, showcase.getFileId(), showcase.getId());
+        return Result.ok(showcase);
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public Result<Void> delete(@PathVariable Long id, HttpServletRequest servletRequest) {
+        CurrentUser current = UserContext.from(servletRequest);
+        Showcase showcase = requireShowcase(id);
+        accessService.requireProjectWritable(showcase.getGroupId(), current);
+        mapper.deleteById(id);
+        releaseOwner(showcase.getId());
+        return Result.ok();
+    }
+
+    private Showcase requireShowcase(Long id) {
+        Showcase showcase = mapper.selectById(id);
+        if (showcase == null) {
+            throw new BusinessException("成果不存在");
+        }
+        return showcase;
+    }
+
+    private void bindReference(Long fileId, Long ownerId) {
+        if (fileId == null) {
+            return;
+        }
+        FileReferenceRequest request = new FileReferenceRequest();
+        request.setFileId(fileId);
+        request.setOwnerType(OWNER_TYPE);
+        request.setOwnerId(ownerId);
+        fileFeignClient.bindReference(request);
+    }
+
+    private void replaceReference(Long oldFileId, Long newFileId, Long ownerId) {
+        FileReferenceReplaceRequest request = new FileReferenceReplaceRequest();
+        request.setOldFileId(oldFileId);
+        request.setNewFileId(newFileId);
+        request.setOwnerType(OWNER_TYPE);
+        request.setOwnerId(ownerId);
+        fileFeignClient.replaceReference(request);
+    }
+
+    private void releaseOwner(Long ownerId) {
+        FileOwnerRequest request = new FileOwnerRequest();
+        request.setOwnerType(OWNER_TYPE);
+        request.setOwnerId(ownerId);
+        fileFeignClient.releaseOwner(request);
     }
 }

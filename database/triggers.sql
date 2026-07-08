@@ -4,6 +4,7 @@ SET NAMES utf8mb4;
 DROP TRIGGER IF EXISTS trg_resource_update_history;
 DROP TRIGGER IF EXISTS trg_submission_grade_history;
 DROP TRIGGER IF EXISTS trg_project_member_insert_history;
+DROP TRIGGER IF EXISTS trg_file_reference_release_queue;
 
 DELIMITER //
 CREATE TRIGGER trg_resource_update_history
@@ -45,5 +46,23 @@ BEGIN
     'JOIN',
     JSON_OBJECT('group_id', NEW.group_id, 'user_id', NEW.user_id, 'role_name', NEW.role_name)
   );
+END //
+
+CREATE TRIGGER trg_file_reference_release_queue
+AFTER UPDATE ON file_reference
+FOR EACH ROW
+BEGIN
+  IF OLD.deleted = 0 AND NEW.deleted = 1 THEN
+    INSERT INTO file_gc_queue(file_id, source_reference_id, reason, status, next_retry_time)
+    VALUES (OLD.file_id, OLD.id, 'REFERENCE_RELEASED', 0, NOW());
+
+    INSERT INTO audit_history(table_name, record_id, action_type, snapshot)
+    VALUES (
+      'file_reference',
+      NEW.id,
+      'RELEASE',
+      JSON_OBJECT('file_id', OLD.file_id, 'owner_type', OLD.owner_type, 'owner_id', OLD.owner_id)
+    );
+  END IF;
 END //
 DELIMITER ;

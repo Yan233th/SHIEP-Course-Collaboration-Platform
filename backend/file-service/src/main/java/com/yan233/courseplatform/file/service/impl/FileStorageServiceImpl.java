@@ -66,7 +66,7 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
     @Override
     public Resource loadAsResource(Long id) {
         FileMetadata metadata = getById(id);
-        if (metadata == null) {
+        if (metadata == null || metadata.getStatus() == null || metadata.getStatus() != 1) {
             throw new BusinessException("文件不存在");
         }
         try {
@@ -85,9 +85,25 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
-        return listByIds(ids).stream()
+        return lambdaQuery()
+                .in(FileMetadata::getId, ids)
+                .eq(FileMetadata::getStatus, 1)
+                .list()
+                .stream()
                 .map(f -> new FileBrief(f.getId(), f.getOriginalName(), f.getContentType(), f.getSizeBytes(), "/api/files/preview/" + f.getId()))
                 .toList();
+    }
+
+    @Override
+    public void deleteContent(FileMetadata metadata) {
+        if (metadata == null || metadata.getStoragePath() == null || metadata.getStoragePath().isBlank()) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(resolveStoragePath(metadata.getStoragePath()));
+        } catch (IOException ex) {
+            throw new BusinessException(500, "文件内容删除失败: " + ex.getMessage());
+        }
     }
 
     private Path storageRoot() {

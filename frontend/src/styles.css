@@ -1082,6 +1082,92 @@ a {
   width: 164px;
 }
 
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-toolbar {
+  margin-bottom: 0;
+}
+
+.stats-toolbar .el-select {
+  width: 260px;
+}
+
+.db-object-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.db-object-card {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.db-object-card span,
+.activity-card span,
+.gc-chip span {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.db-object-card strong {
+  overflow: hidden;
+  color: var(--app-ink-strong);
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-object-card small,
+.gc-chip small {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-tabs {
+  min-height: 0;
+}
+
+.activity-grid,
+.file-gc-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.activity-card,
+.gc-chip {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+}
+
+.activity-card strong,
+.gc-chip strong {
+  color: var(--app-ink-strong);
+  font-size: 24px;
+  line-height: 1;
+}
+
 .side-form {
   min-width: 0;
   padding-left: 18px;

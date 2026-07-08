@@ -14,6 +14,8 @@ DROP TABLE IF EXISTS assignment;
 DROP TABLE IF EXISTS course_resource;
 DROP TABLE IF EXISTS course_notice;
 DROP TABLE IF EXISTS course_member;
+DROP TABLE IF EXISTS file_gc_queue;
+DROP TABLE IF EXISTS file_reference;
 DROP TABLE IF EXISTS file_metadata;
 DROP TABLE IF EXISTS course;
 DROP TABLE IF EXISTS sys_user;
@@ -96,6 +98,44 @@ CREATE TABLE file_metadata (
   INDEX idx_file_uploader (uploader_id),
   INDEX idx_file_biz_type (biz_type)
 ) COMMENT='文件元数据';
+
+CREATE TABLE file_reference (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  file_id BIGINT NOT NULL,
+  owner_type VARCHAR(50) NOT NULL COMMENT 'COURSE_RESOURCE/ASSIGNMENT/SUBMISSION/SHOWCASE',
+  owner_id BIGINT NOT NULL COMMENT '业务记录ID',
+  status TINYINT NOT NULL DEFAULT 1 COMMENT '0停用 1有效',
+  deleted TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除，删除后触发GC候选入队',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_file_reference_file FOREIGN KEY (file_id) REFERENCES file_metadata(id),
+  CONSTRAINT ck_file_reference_owner CHECK (owner_type IN ('COURSE_RESOURCE','ASSIGNMENT','SUBMISSION','SHOWCASE')),
+  CONSTRAINT ck_file_reference_status CHECK (status IN (0,1)),
+  CONSTRAINT uk_file_reference UNIQUE (owner_type, owner_id, file_id, deleted),
+  INDEX idx_file_reference_file (file_id, deleted, status),
+  INDEX idx_file_reference_owner (owner_type, owner_id, deleted)
+) COMMENT='文件业务引用';
+
+CREATE TABLE file_gc_queue (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  file_id BIGINT NOT NULL,
+  source_reference_id BIGINT,
+  reason VARCHAR(50) NOT NULL DEFAULT 'REFERENCE_RELEASED',
+  status TINYINT NOT NULL DEFAULT 0 COMMENT '0待处理 1处理中 2已释放 3仍被引用 4失败',
+  attempts INT NOT NULL DEFAULT 0,
+  last_error VARCHAR(1000),
+  next_retry_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  processed_time DATETIME,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_file_gc_file FOREIGN KEY (file_id) REFERENCES file_metadata(id),
+  CONSTRAINT fk_file_gc_reference FOREIGN KEY (source_reference_id) REFERENCES file_reference(id),
+  CONSTRAINT ck_file_gc_status CHECK (status IN (0,1,2,3,4)),
+  CONSTRAINT ck_file_gc_attempts CHECK (attempts >= 0),
+  INDEX idx_file_gc_status_retry (status, next_retry_time),
+  INDEX idx_file_gc_file (file_id, status)
+) COMMENT='文件回收队列';
 
 CREATE TABLE course_notice (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
