@@ -789,11 +789,23 @@ a {
 }
 
 .capability-tags {
+  min-height: 60px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 4px;
+  align-content: flex-start;
+  transition: opacity 0.18s ease;
+}
+
+.capability-tags.is-refreshing {
+  opacity: 0.68;
+}
+
+.capability-tags .el-tag {
+  flex: 0 0 auto;
+  transition: none;
 }
 
 .course-summary {

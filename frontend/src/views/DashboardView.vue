@@ -6,8 +6,8 @@
         <p>{{ dashboardLead }}</p>
         <div class="dashboard-meta">
           <el-tag effect="plain">{{ roleLabel(currentRole) }}</el-tag>
-          <el-tag v-if="appState.courseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
-            课程身份：{{ roleLabel(appState.courseAccess.courseRole) }}
+          <el-tag v-if="displayCourseAccess?.courseRole" effect="plain" :type="courseRoleTagType">
+            课程身份：{{ roleLabel(displayCourseAccess.courseRole) }}
           </el-tag>
           <el-tag effect="plain" type="info">{{ permissionCount }} 项权限</el-tag>
         </div>
@@ -64,7 +64,7 @@
             <h2>角色状态</h2>
             <p>{{ selectedCourse?.courseName || '当前平台' }}</p>
           </div>
-          <strong>{{ roleLabel(appState.courseAccess?.courseRole || currentRole) }}</strong>
+          <strong>{{ roleLabel(displayCourseAccess?.courseRole || currentRole) }}</strong>
         </div>
         <div class="status-list">
           <div>
@@ -73,7 +73,7 @@
           </div>
           <div>
             <span>课程身份</span>
-            <strong>{{ roleLabel(appState.courseAccess?.courseRole) }}</strong>
+            <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
           </div>
           <div>
             <span>课程容量</span>
@@ -81,7 +81,7 @@
           </div>
         </div>
         <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
-        <div class="capability-tags">
+        <div class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
           <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
           <span v-if="!visibleActions.length" class="muted">暂无课程操作权限</span>
         </div>
@@ -129,13 +129,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Bell, ChatDotRound, Collection, Connection, DataAnalysis, Files, Notebook, Refresh, Trophy, User } from '@element-plus/icons-vue'
 import { courseService } from '../services/platform'
 import { appState, courseLabel, currentCourseId, currentCourseLabel, currentRole, hasSystemRole, roleLabel, selectedCourse, setCurrentCourse } from '../state/appState'
-import type { CourseStats } from '../types'
+import type { CourseAccess, CourseStats } from '../types'
 
 const stats = ref<CourseStats[]>([])
+const displayCourseAccess = ref<CourseAccess | null>(appState.courseAccess)
 const currentCourseModel = computed({
   get: () => currentCourseId.value,
   set: (value: number) => {
@@ -152,9 +153,9 @@ const dashboardLead = computed(() => {
   if (!course) return '选择课程后进入成员、资源、作业和项目协作。'
   return `${course.courseCode} · ${course.teacherName || '未设置教师'} · ${course.credit ?? '-'} 学分`
 })
-const permissionCount = computed(() => appState.courseAccess?.actions.length || 0)
+const permissionCount = computed(() => displayCourseAccess.value?.actions.length || 0)
 const courseRoleTagType = computed(() => {
-  const role = appState.courseAccess?.courseRole
+  const role = displayCourseAccess.value?.courseRole
   if (role === 'TEACHER') return 'success'
   if (role === 'TA') return 'warning'
   if (role === 'STUDENT') return 'info'
@@ -165,7 +166,7 @@ const capacityPercent = computed(() => {
   if (!max) return 0
   return Math.min(100, Math.round(((selectedCourse.value?.currentStudents || 0) / max) * 100))
 })
-const visibleActions = computed(() => (appState.courseAccess?.actions || []).slice(0, 10))
+const visibleActions = computed(() => (displayCourseAccess.value?.actions || []).slice(0, 10))
 const metrics = computed(() => [
   {
     label: hasSystemRole('ADMIN') ? '平台课程' : '我的课程',
@@ -223,4 +224,18 @@ onMounted(async () => {
     await loadStats()
   }
 })
+
+watch(
+  () => [appState.courseAccess, appState.courseAccessLoading] as const,
+  ([access, loading]) => {
+    if (access) {
+      displayCourseAccess.value = access
+      return
+    }
+    if (!loading) {
+      displayCourseAccess.value = null
+    }
+  },
+  { immediate: true }
+)
 </script>
