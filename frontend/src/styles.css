@@ -758,40 +758,106 @@ a {
 }
 
 .status-panel {
+  align-self: start;
   display: flex;
   flex-direction: column;
 }
 
-.status-list {
-  display: grid;
-  gap: 8px;
+.status-heading {
   margin-bottom: 12px;
 }
 
-.status-list div {
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
+.status-overview {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.status-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.status-role-pill {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-soft) 100%);
+}
+
+.status-role-pill.is-course-role {
+  border-color: rgb(var(--app-brand-rgb) / 24%);
+  background: rgb(var(--app-brand-rgb) / 6%);
+}
+
+.status-role-pill span,
+.capacity-heading span,
+.permission-summary-heading span {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-role-pill strong {
+  overflow: hidden;
+  color: var(--app-ink-strong);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capacity-panel {
+  display: grid;
+  gap: 9px;
+  padding: 11px 12px 12px;
   border: 1px solid var(--app-border);
   border-radius: 8px;
   background: var(--app-surface-soft);
 }
 
-.status-list span {
-  color: var(--app-muted);
-  font-size: 13px;
+.capacity-heading,
+.permission-summary-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.status-list strong {
+.capacity-heading strong {
+  flex: 0 0 auto;
   color: var(--app-ink-strong);
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.permission-summary {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.permission-summary-heading small {
+  flex: 0 0 auto;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .capacity-progress {
-  margin: 4px 0 12px;
+  margin: 0;
 }
 
 .capability-tags {
@@ -1431,6 +1497,10 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .status-role-grid {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-header,
   .profile-header {
     padding: 20px;
@@ -1889,7 +1959,6 @@ body {
   white-space: nowrap;
 }
 
-.status-list div,
 .course-summary div,
 .profile-detail-list div {
   border-color: var(--app-border);
@@ -2135,7 +2204,6 @@ body {
   padding: 7px;
 }
 
-.status-list strong,
 .profile-detail-list dd,
 .el-table .cell {
   font-weight: 500;

@@ -65,36 +65,41 @@
       </section>
 
       <section class="panel status-panel">
-        <div class="section-heading">
+        <div class="section-heading status-heading">
           <div>
-            <h2>角色状态</h2>
+            <h2>角色与权限</h2>
             <p>{{ selectedCourse?.courseName || '当前平台' }}</p>
           </div>
-          <strong>{{ roleLabel(displayCourseAccess?.courseRole || currentRole) }}</strong>
         </div>
-        <div class="course-swap">
-          <Transition name="course-swap">
-            <div :key="`status-${currentCourseId}-${displayCourseAccess?.courseRole || 'none'}`" class="status-list">
-              <div>
-                <span>系统身份</span>
-                <strong>{{ roleLabel(currentRole) }}</strong>
-              </div>
-              <div>
-                <span>课程身份</span>
-                <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
-              </div>
-              <div>
-                <span>课程容量</span>
-                <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
-              </div>
+        <div class="status-overview">
+          <div class="status-role-grid">
+            <div class="status-role-pill">
+              <span>系统身份</span>
+              <strong>{{ roleLabel(currentRole) }}</strong>
             </div>
-          </Transition>
+            <div class="status-role-pill is-course-role">
+              <span>课程身份</span>
+              <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
+            </div>
+          </div>
+          <div class="capacity-panel">
+            <div class="capacity-heading">
+              <span>课程容量</span>
+              <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
+            </div>
+            <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
+          </div>
         </div>
-        <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
-        <TransitionGroup name="permission-chip" tag="div" class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
-          <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
-          <span v-if="!visibleActions.length" key="empty" class="muted">暂无课程操作权限</span>
-        </TransitionGroup>
+        <div class="permission-summary">
+          <div class="permission-summary-heading">
+            <span>课程权限</span>
+            <small>{{ permissionCount }} 项</small>
+          </div>
+          <TransitionGroup name="permission-chip" tag="div" class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
+            <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
+            <span v-if="!visibleActions.length" key="empty" class="muted">暂无课程操作权限</span>
+          </TransitionGroup>
+        </div>
       </section>
     </div>
 
