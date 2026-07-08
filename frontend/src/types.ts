@@ -116,8 +116,12 @@ export interface ProjectGroup {
   courseId: number
   name: string
   topic: string
+  leaderId?: number
   currentMembers: number
   maxMembers: number
+  status?: number
+  createTime?: string
+  updateTime?: string
 }
 
 export interface ProjectMember {
@@ -161,9 +165,12 @@ export interface Showcase {
   id: number
   courseId: number
   groupId: number
+  fileId?: number
   title: string
   summary: string
   linkUrl?: string
+  createTime?: string
+  updateTime?: string
 }
 
 export interface CourseStats {

@@ -171,6 +171,12 @@ export const collaborationService = {
   createGroup(payload: Record<string, unknown>) {
     return unwrap<ProjectGroup>(http.post('/projects/groups', payload))
   },
+  updateGroup(id: number, payload: Record<string, unknown>) {
+    return unwrap<ProjectGroup>(http.put(`/projects/groups/${id}`, payload))
+  },
+  deleteGroup(id: number) {
+    return unwrap<void>(http.delete(`/projects/groups/${id}`))
+  },
   joinGroup(groupId: number, payload: { userId: number; roleName: string }) {
     return unwrap<void>(http.post(`/projects/groups/${groupId}/join`, payload))
   },
