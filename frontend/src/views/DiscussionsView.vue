@@ -34,8 +34,7 @@
       <!-- 左：话题总列表 -->
       <aside class="dz-list">
         <div class="dz-list-head">话题 · {{ topicList.length }}</div>
-        <div ref="listBody" class="dz-list-body">
-          <div class="dz-list-indicator" :class="{ moving: indicatorSettled }" :style="indicatorStyle"></div>
+        <div class="dz-list-body">
           <button
             v-for="topic in topicList"
             :key="topic.id"
@@ -107,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { collaborationService } from '../services/platform'
 import { can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
@@ -121,43 +120,6 @@ const topicDrawer = ref(false)
 const topicForm = reactive({ title: '', content: '' })
 const replyContent = ref('')
 const canCreateTopic = computed(() => Boolean(topicForm.title.trim() && topicForm.content.trim()))
-
-// 左侧选中高亮：跟随选中项位置滑动
-const listBody = ref<HTMLElement>()
-const indicatorStyle = ref<Record<string, string>>({ opacity: '0' })
-const indicatorSettled = ref(false)
-
-function moveIndicator() {
-  const body = listBody.value
-  const id = selectedTopicId.value
-  if (!body || !id) {
-    indicatorStyle.value = { opacity: '0' }
-    indicatorSettled.value = false
-    return
-  }
-  const el = body.querySelector<HTMLElement>(`[data-topic-id="${id}"]`)
-  if (!el) {
-    indicatorStyle.value = { opacity: '0' }
-    indicatorSettled.value = false
-    return
-  }
-  const wasSettled = indicatorSettled.value
-  indicatorStyle.value = {
-    opacity: '1',
-    transform: `translateY(${el.offsetTop}px)`,
-    left: `${el.offsetLeft}px`,
-    width: `${el.offsetWidth}px`,
-    height: `${el.offsetHeight}px`
-  }
-  if (!wasSettled) {
-    const settledTopicId = id
-    requestAnimationFrame(() => {
-      if (selectedTopicId.value === settledTopicId) {
-        indicatorSettled.value = true
-      }
-    })
-  }
-}
 
 // 话题 = 顶层帖；回复按根话题归拢（兼容历史"回复的回复"，统一两级展示）
 const topicList = computed(() => discussions.value.filter((d) => !d.parentId))
@@ -254,16 +216,9 @@ async function submitReply() {
   await loadDiscussions()
 }
 
-function onResize() {
-  moveIndicator()
-}
 onMounted(() => {
   void loadAccessibleGroups()
-  window.addEventListener('resize', onResize)
 })
-onUnmounted(() => window.removeEventListener('resize', onResize))
-watch(selectedTopicId, () => nextTick(moveIndicator))
-watch(topicList, () => nextTick(moveIndicator))
 watch([currentCourseId, refreshSignal], () => {
   selectedTopicId.value = undefined
   selectedGroupId.value = undefined
@@ -302,23 +257,6 @@ watch([currentCourseId, refreshSignal], () => {
   flex: 1;
   padding: 6px;
 }
-.dz-list-indicator {
-  position: absolute;
-  top: 0;
-  border-radius: 10px;
-  background: rgb(var(--app-brand-rgb) / 8%);
-  box-shadow: inset 0 0 0 1px rgb(var(--app-brand-rgb) / 16%);
-  z-index: 0;
-  pointer-events: none;
-  transition: opacity 0.16s ease;
-}
-.dz-list-indicator.moving {
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    left 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.2s ease;
-}
 .dz-list-item {
   position: relative;
   z-index: 1;
@@ -328,23 +266,80 @@ watch([currentCourseId, refreshSignal], () => {
   background: transparent;
   border: 0;
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 10px 30px 10px 12px;
   cursor: pointer;
   margin-bottom: 4px;
-  transition: background 0.15s ease;
+  transition: color 0.18s ease;
+}
+.dz-list-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid rgb(var(--app-brand-rgb) / 12%);
+  border-radius: 10px;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.24s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.dz-list-item::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  z-index: 1;
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid var(--app-brand-deep);
+  border-bottom: 1px solid var(--app-brand-deep);
+  opacity: 0;
+  transform: translate(-2px, -50%) rotate(-45deg);
+  transition:
+    opacity 0.2s ease,
+    transform 0.24s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.dz-list-title,
+.dz-list-meta {
+  position: relative;
+  z-index: 1;
+  transition:
+    color 0.18s ease,
+    transform 0.24s cubic-bezier(0.33, 1, 0.68, 1);
 }
 .dz-list-item:not(.active):hover {
-  background: #f3f4f6;
+  background: transparent;
+}
+.dz-list-item:not(.active):hover::before {
+  opacity: 1;
+  border-color: var(--app-brand-soft-strong);
+  background: rgb(255 255 255 / 42%);
 }
 .dz-list-item.active {
   background: transparent;
 }
+.dz-list-item.active::before {
+  opacity: 1;
+  border-color: rgb(var(--app-brand-rgb) / 18%);
+  background: rgb(var(--app-brand-rgb) / 12%);
+  transform: translateX(3px);
+}
+.dz-list-item.active::after {
+  opacity: 0.45;
+  transform: translate(3px, -50%) rotate(-45deg);
+}
 .dz-list-item.active .dz-list-title {
   color: var(--app-brand-deep);
   font-weight: 650;
+  transform: translateX(4px);
 }
 .dz-list-item.active .dz-list-meta {
   color: var(--app-muted);
+  transform: translateX(4px);
 }
 .dz-list-title {
   font-size: 13px;
