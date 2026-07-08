@@ -123,17 +123,32 @@ export const courseService = {
   createNotice(payload: { courseId: number; title: string; content: string; publisherId: number; pinned: number; status: number }) {
     return unwrap<Notice>(http.post('/notices', payload))
   },
+  updateNotice(id: number, payload: { courseId: number; title: string; content: string; publisherId: number; pinned: number; status: number }) {
+    return unwrap<Notice>(http.put(`/notices/${id}`, payload))
+  },
+  deleteNotice(id: number) {
+    return unwrap<void>(http.delete(`/notices/${id}`))
+  },
   getResources(params: { courseId: number; category?: string; tag?: string }) {
     return unwrap<ResourceItem[]>(http.get('/resources', { params }))
   },
   createResource(payload: Record<string, unknown>) {
     return unwrap<ResourceItem>(http.post('/resources', payload))
   },
+  updateResource(id: number, payload: Record<string, unknown>) {
+    return unwrap<ResourceItem>(http.put(`/resources/${id}`, payload))
+  },
+  deleteResource(id: number) {
+    return unwrap<void>(http.delete(`/resources/${id}`))
+  },
   getAssignments(courseId: number) {
     return unwrap<Assignment[]>(http.get('/assignments', { params: { courseId } }))
   },
   createAssignment(payload: Record<string, unknown>) {
     return unwrap<Assignment>(http.post('/assignments', payload))
+  },
+  updateAssignment(id: number, payload: Record<string, unknown>) {
+    return unwrap<Assignment>(http.put(`/assignments/${id}`, payload))
   },
   getSubmissions(assignmentId: number) {
     return unwrap<Submission[]>(http.get('/submissions', { params: { assignmentId } }))

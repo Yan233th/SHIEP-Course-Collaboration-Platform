@@ -1,5 +1,5 @@
 <template>
-  <section class="panel">
+  <section class="panel" v-loading="loading">
     <div class="section-heading">
       <div>
         <h2>用户与角色</h2>
@@ -47,8 +47,8 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="userDialog" :title="editingUser ? '编辑用户' : '新增用户'" width="560px" append-to-body>
-      <el-form :model="userForm" label-width="88px">
+    <WorkspaceDrawer v-model="userDialog" :title="editingUser ? '编辑用户' : '新增用户'" size="480px" @closed="resetUserForm">
+      <el-form :model="userForm" label-position="top" class="drawer-form">
         <el-form-item label="账号"><el-input v-model="userForm.username" /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="userForm.realName" /></el-form-item>
         <el-form-item :label="editingUser ? '新密码' : '密码'">
@@ -79,10 +79,12 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="userDialog = false">取消</el-button>
-        <el-button type="primary" :disabled="!canSaveUser" @click="saveUser">保存</el-button>
+        <div class="drawer-actions">
+          <el-button @click="userDialog = false">取消</el-button>
+          <el-button type="primary" :loading="savingUser" :disabled="!canSaveUser" @click="saveUser">保存</el-button>
+        </div>
       </template>
-    </el-dialog>
+    </WorkspaceDrawer>
   </section>
 </template>
 
@@ -90,6 +92,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
+import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { userService, type UserPayload, type UserQuery } from '../services/platform'
 import { roleLabel } from '../state/appState'
 import type { Page, RoleCode, UserRow } from '../types'
@@ -99,6 +102,8 @@ const users = ref<Page<UserRow>>({ total: 0, pageNum: 1, pageSize: 10, records: 
 const selection = ref<UserRow[]>([])
 const userDialog = ref(false)
 const editingUser = ref<UserRow | null>(null)
+const loading = ref(false)
+const savingUser = ref(false)
 const userForm = reactive({
   username: '',
   password: '',
@@ -112,11 +117,17 @@ const userForm = reactive({
 const canSaveUser = computed(() => Boolean(userForm.username.trim() && userForm.realName.trim() && userForm.roleCode))
 
 async function loadUsers() {
-  users.value = await userService.getUsers(query)
+  loading.value = true
+  try {
+    users.value = await userService.getUsers(query)
+  } finally {
+    loading.value = false
+  }
 }
 
 function resetUserForm() {
   editingUser.value = null
+  savingUser.value = false
   Object.assign(userForm, {
     username: '',
     password: '',
@@ -166,16 +177,20 @@ function userPayload(): UserPayload {
 }
 
 async function saveUser() {
-  if (editingUser.value) {
-    await userService.updateUser(editingUser.value.id, userPayload())
-    ElMessage.success('用户信息已更新')
-  } else {
-    await userService.createUser(userPayload())
-    ElMessage.success('用户已创建')
+  savingUser.value = true
+  try {
+    if (editingUser.value) {
+      await userService.updateUser(editingUser.value.id, userPayload())
+      ElMessage.success('用户信息已更新')
+    } else {
+      await userService.createUser(userPayload())
+      ElMessage.success('用户已创建')
+    }
+    userDialog.value = false
+    await loadUsers()
+  } finally {
+    savingUser.value = false
   }
-  userDialog.value = false
-  resetUserForm()
-  await loadUsers()
 }
 
 async function batchDeleteUsers() {

@@ -1,5 +1,5 @@
 <template>
-  <section class="panel">
+  <section class="panel" v-loading="loading">
     <div class="section-heading">
       <div>
         <h2>课程列表</h2>
@@ -47,8 +47,8 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="courseDialog" :title="courseDialogTitle" width="560px" append-to-body>
-      <el-form :model="courseForm" label-width="88px">
+    <WorkspaceDrawer v-model="courseDialog" :title="courseDialogTitle" size="480px" @closed="resetCourseDrawer">
+      <el-form :model="courseForm" label-position="top" class="drawer-form">
         <el-form-item label="课程编号"><el-input v-model="courseForm.courseCode" /></el-form-item>
         <el-form-item label="课程名称"><el-input v-model="courseForm.courseName" /></el-form-item>
         <el-form-item label="教师ID"><el-input-number v-model="courseForm.teacherId" :min="1" :disabled="Boolean(editingCourse) && !hasSystemRole('ADMIN')" /></el-form-item>
@@ -65,10 +65,12 @@
         <el-form-item label="简介"><el-input v-model="courseForm.description" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="courseDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveCourse">保存</el-button>
+        <div class="drawer-actions">
+          <el-button @click="courseDialog = false">取消</el-button>
+          <el-button type="primary" :loading="savingCourse" :disabled="!canSaveCourse" @click="saveCourse">保存</el-button>
+        </div>
       </template>
-    </el-dialog>
+    </WorkspaceDrawer>
   </section>
 </template>
 
@@ -76,6 +78,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
+import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { courseService, type CourseQuery } from '../services/platform'
 import { appState, currentCourseId, hasSystemRole, loadCourses as loadGlobalCourses, setCurrentCourse } from '../state/appState'
 import type { Course, Page } from '../types'
@@ -97,9 +100,12 @@ const courses = ref<Page<Course>>({ total: 0, pageNum: 1, pageSize: 10, records:
 const selection = ref<Course[]>([])
 const courseDialog = ref(false)
 const editingCourse = ref<Course | null>(null)
+const loading = ref(false)
+const savingCourse = ref(false)
 const courseForm = reactive<CourseForm>(defaultCourseForm())
 const courseDialogTitle = computed(() => editingCourse.value ? '编辑课程' : '新增课程')
 const canMaintainCourses = computed(() => hasSystemRole('ADMIN') || courses.value.records.some((course) => canEditCourse(course)))
+const canSaveCourse = computed(() => Boolean(courseForm.courseCode.trim() && courseForm.courseName.trim() && courseForm.teacherId))
 
 function defaultCourseForm(): CourseForm {
   return {
@@ -116,7 +122,12 @@ function defaultCourseForm(): CourseForm {
 }
 
 async function loadCourses() {
-  courses.value = await courseService.getCourses(query)
+  loading.value = true
+  try {
+    courses.value = await courseService.getCourses(query)
+  } finally {
+    loading.value = false
+  }
 }
 
 function selectCourse(course: Course) {
@@ -155,6 +166,12 @@ function openEditDialog(course: Course) {
   courseDialog.value = true
 }
 
+function resetCourseDrawer() {
+  editingCourse.value = null
+  Object.assign(courseForm, defaultCourseForm())
+  savingCourse.value = false
+}
+
 function coursePayload() {
   if (!courseForm.courseCode || !courseForm.courseName || !courseForm.teacherId) {
     ElMessage.warning('请补全课程编号、名称和教师ID')
@@ -176,17 +193,20 @@ function coursePayload() {
 async function saveCourse() {
   const payload = coursePayload()
   if (!payload) return
-  if (editingCourse.value) {
-    await courseService.updateCourse(editingCourse.value.id, payload)
-    ElMessage.success('课程信息已更新')
-  } else {
-    await courseService.createCourse(payload)
-    ElMessage.success('课程已创建')
+  savingCourse.value = true
+  try {
+    if (editingCourse.value) {
+      await courseService.updateCourse(editingCourse.value.id, payload)
+      ElMessage.success('课程信息已更新')
+    } else {
+      await courseService.createCourse(payload)
+      ElMessage.success('课程已创建')
+    }
+    courseDialog.value = false
+    await Promise.all([loadCourses(), loadGlobalCourses()])
+  } finally {
+    savingCourse.value = false
   }
-  courseDialog.value = false
-  editingCourse.value = null
-  Object.assign(courseForm, defaultCourseForm())
-  await Promise.all([loadCourses(), loadGlobalCourses()])
 }
 
 async function batchDeleteCourses() {
@@ -196,6 +216,10 @@ async function batchDeleteCourses() {
 }
 
 onMounted(async () => {
-  courses.value = appState.courses.records.length ? appState.courses : await courseService.getCourses(query)
+  if (appState.courses.records.length) {
+    courses.value = appState.courses
+    return
+  }
+  await loadCourses()
 })
 </script>

@@ -96,7 +96,9 @@
             <small>{{ permissionCount }} 项</small>
           </div>
           <TransitionGroup name="permission-chip" tag="div" class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
-            <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
+            <el-tag v-for="action in visibleActions" :key="action" effect="plain" :title="action">
+              {{ permissionLabel(action) }}
+            </el-tag>
             <span v-if="!visibleActions.length" key="empty" class="muted">暂无课程操作权限</span>
           </TransitionGroup>
         </div>
@@ -152,6 +154,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { Bell, ChatDotRound, Collection, Connection, DataAnalysis, Files, Notebook, Refresh, Trophy, User } from '@element-plus/icons-vue'
 import { courseService } from '../services/platform'
 import { appState, courseLabel, currentCourseId, currentCourseLabel, currentRole, hasSystemRole, roleLabel, selectedCourse, setCurrentCourse } from '../state/appState'
+import { permissionLabel } from '../utils/display'
 import type { CourseAccess, CourseStats } from '../types'
 
 const stats = ref<CourseStats[]>([])

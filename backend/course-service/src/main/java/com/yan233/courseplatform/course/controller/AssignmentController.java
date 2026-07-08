@@ -6,6 +6,7 @@ import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.exception.BusinessException;
 import com.yan233.courseplatform.common.web.UserContext;
+import com.yan233.courseplatform.course.dto.CourseAccess;
 import com.yan233.courseplatform.course.dto.AssignmentRequest;
 import com.yan233.courseplatform.course.dto.SubmissionRequest;
 import com.yan233.courseplatform.course.entity.Assignment;
@@ -71,9 +72,11 @@ public class AssignmentController {
     @PostMapping("/submissions")
     public Result<Submission> submit(@RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
-        AccessControl.requireRole(current, "ADMIN", "STUDENT");
         Assignment assignment = requireAssignment(request.getAssignmentId());
-        courseService.requireCanView(assignment.getCourseId(), current);
+        CourseAccess access = courseService.access(assignment.getCourseId(), current);
+        if (!access.actions().contains("SUBMIT_ASSIGNMENT")) {
+            throw new BusinessException(403, "无权限提交该课程作业");
+        }
         if (!current.isAdmin()) {
             request.setStudentId(current.userId());
         }

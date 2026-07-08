@@ -1131,6 +1131,13 @@ a {
   line-height: 1.65;
 }
 
+.notice-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+}
+
 .tag-chip {
   margin: 0 6px 6px 0;
 }
@@ -1202,9 +1209,24 @@ a {
   background: var(--app-surface-soft);
 }
 
-.assignment-detail > div:first-child {
+.assignment-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.assignment-detail-head > div:first-child {
   display: grid;
   gap: 4px;
+  min-width: 0;
+}
+
+.assignment-detail-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .assignment-detail span,
@@ -2315,7 +2337,8 @@ body {
 }
 
 .drawer-form .el-select,
-.drawer-form .el-date-editor {
+.drawer-form .el-date-editor,
+.drawer-form .el-input-number {
   width: 100%;
 }
 
@@ -2328,6 +2351,28 @@ body {
 .assignments-page {
   display: grid;
   gap: 16px;
+}
+
+.assignment-workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(460px, 1fr) minmax(360px, 0.75fr);
+  gap: 14px;
+}
+
+.assignment-list-panel,
+.assignment-side-panel {
+  min-width: 0;
+}
+
+.assignment-table .el-table__row {
+  cursor: pointer;
+}
+
+.assignment-side-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
 }
 
 .submissions-section {
@@ -2344,6 +2389,10 @@ body {
     min-width: 0;
     width: 100%;
     grid-template-columns: 68px minmax(220px, 1fr) 32px;
+  }
+
+  .assignment-workspace {
+    grid-template-columns: 1fr;
   }
 }
 

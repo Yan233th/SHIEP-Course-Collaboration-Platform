@@ -1,5 +1,5 @@
 <template>
-  <section class="panel assignments-page">
+  <section class="panel assignments-page" v-loading="loading">
     <div class="section-heading compact">
       <div>
         <h2>作业与提交</h2>
@@ -7,140 +7,133 @@
       </div>
       <div class="heading-actions">
         <strong>{{ assignments.length }} 项</strong>
-        <el-button v-if="can('CREATE_ASSIGNMENT')" type="primary" :icon="Plus" @click="openAssignmentDrawer">
+        <el-button v-if="canManageAssignment" type="primary" :icon="Plus" @click="openAssignmentDrawer">
           发布作业
         </el-button>
       </div>
     </div>
 
-    <el-table :data="assignments" height="320px" empty-text="暂无作业">
-      <el-table-column prop="title" label="作业" />
-      <el-table-column label="说明" min-width="220">
-        <template #default="{ row }">
-          <span class="table-ellipsis">{{ row.description || '-' }}</span>
+    <div class="assignment-workspace">
+      <section class="assignment-list-panel">
+        <el-table
+          class="assignment-table"
+          :data="assignments"
+          :row-class-name="assignmentRowClassName"
+          height="calc(100vh - 270px)"
+          empty-text="暂无作业"
+          @row-click="selectAssignmentByRow"
+        >
+          <el-table-column prop="title" label="作业" min-width="180" />
+          <el-table-column label="截止时间" width="150">
+            <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
+          </el-table-column>
+          <el-table-column prop="totalScore" label="总分" width="78" />
+          <el-table-column label="操作" width="180" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" text @click.stop="selectAssignment(row.id)">查看</el-button>
+              <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click.stop="openEditAssignmentDrawer(row)">编辑</el-button>
+              <el-button v-if="canSubmitAssignment" size="small" type="primary" @click.stop="openSubmissionDrawer(row.id)">提交</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </section>
+
+      <aside class="assignment-side-panel">
+        <div v-if="!selectedAssignment" class="empty-inline">选择左侧作业查看详情</div>
+        <template v-else>
+          <section class="assignment-detail">
+            <div class="assignment-detail-head">
+              <div>
+                <span>作业说明</span>
+                <strong>{{ selectedAssignment.title }}</strong>
+              </div>
+              <div class="assignment-detail-actions">
+                <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click="openEditAssignmentDrawer(selectedAssignment)">编辑</el-button>
+                <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
+              </div>
+            </div>
+            <p>{{ selectedAssignment.description || '暂无说明' }}</p>
+            <dl>
+              <div>
+                <dt>截止时间</dt>
+                <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
+              </div>
+              <div>
+                <dt>总分</dt>
+                <dd>{{ selectedAssignment.totalScore }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="submissions-section">
+            <div class="section-heading compact subsection-heading">
+              <div>
+                <h2>{{ canGradeSubmission ? '提交与批改' : '我的提交' }}</h2>
+                <p>{{ selectedAssignment.title }}</p>
+              </div>
+              <strong>{{ submissions.length }} 条</strong>
+            </div>
+            <el-table :data="submissions" max-height="300px" empty-text="暂无提交">
+              <el-table-column prop="studentId" label="学生ID" width="90" />
+              <el-table-column label="内容">
+                <template #default="{ row }">
+                  <span class="table-ellipsis">{{ row.content || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="成绩" width="82">
+                <template #default="{ row }">{{ row.score ?? '-' }}</template>
+              </el-table-column>
+              <el-table-column label="状态" width="90">
+                <template #default="{ row }">
+                  <el-tag effect="plain" :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已批改' : '已提交' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="canGradeSubmission" label="操作" width="90">
+                <template #default="{ row }">
+                  <el-button size="small" @click="selectSubmission(row)">批改</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </section>
         </template>
-      </el-table-column>
-      <el-table-column label="截止时间" width="160">
-        <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
-      </el-table-column>
-      <el-table-column prop="totalScore" label="总分" width="90" />
-      <el-table-column label="操作" width="150">
-        <template #default="{ row }">
-          <el-button size="small" @click="selectAssignment(row.id)">查看</el-button>
-          <el-button v-if="can('SUBMIT_ASSIGNMENT')" size="small" type="primary" @click="openSubmissionDrawer(row.id)">提交</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      </aside>
+    </div>
 
-    <section v-if="selectedAssignment" class="assignment-detail">
-      <div>
-        <span>作业说明</span>
-        <strong>{{ selectedAssignment.title }}</strong>
-      </div>
-      <p>{{ selectedAssignment.description || '暂无说明' }}</p>
-      <dl>
-        <div>
-          <dt>截止时间</dt>
-          <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
-        </div>
-        <div>
-          <dt>总分</dt>
-          <dd>{{ selectedAssignment.totalScore }}</dd>
-        </div>
-      </dl>
-    </section>
-
-    <section v-if="selectedAssignment" class="submissions-section">
-      <div class="section-heading compact subsection-heading">
-        <div>
-          <h2>{{ can('GRADE_SUBMISSION') ? '提交与批改' : '我的提交' }}</h2>
-          <p>{{ selectedAssignment.title }}</p>
-        </div>
-        <strong>{{ submissions.length }} 条</strong>
-      </div>
-      <el-table :data="submissions" max-height="260px" empty-text="暂无提交">
-        <el-table-column prop="studentId" label="学生ID" width="90" />
-        <el-table-column label="内容">
-          <template #default="{ row }">
-            <span class="table-ellipsis">{{ row.content || '-' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="成绩" width="82">
-          <template #default="{ row }">{{ row.score ?? '-' }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }">
-            <el-tag effect="plain" :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已批改' : '已提交' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column v-if="can('GRADE_SUBMISSION')" label="操作" width="90">
-          <template #default="{ row }">
-            <el-button size="small" @click="selectSubmission(row)">批改</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </section>
-
-    <div v-if="!can('CREATE_ASSIGNMENT') && !can('SUBMIT_ASSIGNMENT') && !selectedAssignment" class="muted-panel">当前角色只能查看作业。</div>
-
-    <el-drawer
-      v-model="assignmentDrawer"
-      title="发布作业"
-      append-to-body
-      class="workspace-drawer"
-      direction="rtl"
-      size="440px"
-      @closed="resetAssignmentForm"
-    >
+    <WorkspaceDrawer v-model="assignmentDrawer" :title="assignmentDrawerTitle" @closed="resetAssignmentForm">
       <el-form :model="assignmentForm" label-position="top" class="drawer-form">
         <el-form-item label="标题"><el-input v-model="assignmentForm.title" /></el-form-item>
         <el-form-item label="截止时间">
           <el-date-picker v-model="assignmentForm.dueTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" />
         </el-form-item>
+        <el-form-item label="总分"><el-input-number v-model="assignmentForm.totalScore" :min="1" :max="1000" /></el-form-item>
         <el-form-item label="说明"><el-input v-model="assignmentForm.description" type="textarea" :rows="6" /></el-form-item>
       </el-form>
       <template #footer>
         <div class="drawer-actions">
           <el-button @click="assignmentDrawer = false">取消</el-button>
-          <el-button type="primary" :icon="Plus" :disabled="!canCreateAssignment" @click="createAssignment">发布</el-button>
+          <el-button type="primary" :icon="editingAssignment ? Check : Plus" :loading="assignmentSaving" :disabled="!canSaveAssignment" @click="saveAssignment">
+            {{ editingAssignment ? '保存' : '发布' }}
+          </el-button>
         </div>
       </template>
-    </el-drawer>
+    </WorkspaceDrawer>
 
-    <el-drawer
-      v-model="submissionDrawer"
-      title="提交作业"
-      append-to-body
-      class="workspace-drawer"
-      direction="rtl"
-      size="440px"
-      @closed="resetSubmissionForm"
-    >
+    <WorkspaceDrawer v-model="submissionDrawer" title="提交作业" @closed="resetSubmissionForm">
       <el-form :model="submissionForm" label-position="top" class="drawer-form">
         <el-form-item label="当前作业">
-          <el-select v-model="submissionForm.assignmentId" placeholder="选择作业">
-            <el-option v-for="assignment in assignments" :key="assignment.id" :label="assignment.title" :value="assignment.id" />
-          </el-select>
+          <el-input :model-value="submissionAssignmentTitle" disabled />
         </el-form-item>
         <el-form-item label="提交内容"><el-input v-model="submissionForm.content" type="textarea" :rows="8" /></el-form-item>
       </el-form>
       <template #footer>
         <div class="drawer-actions">
           <el-button @click="submissionDrawer = false">取消</el-button>
-          <el-button type="primary" :icon="Upload" :disabled="!canCreateSubmission" @click="createSubmission">提交</el-button>
+          <el-button type="primary" :icon="Upload" :loading="submissionSaving" :disabled="!canCreateSubmission" @click="createSubmission">提交</el-button>
         </div>
       </template>
-    </el-drawer>
+    </WorkspaceDrawer>
 
-    <el-drawer
-      v-model="gradeDrawer"
-      title="批改提交"
-      append-to-body
-      class="workspace-drawer"
-      direction="rtl"
-      size="420px"
-      @closed="resetGradeForm"
-    >
+    <WorkspaceDrawer v-model="gradeDrawer" title="批改提交" size="420px" @closed="resetGradeForm">
       <el-form :model="gradeForm" label-position="top" class="drawer-form">
         <el-form-item label="分数">
           <el-input-number v-model="gradeForm.score" :min="0" :max="selectedAssignment?.totalScore || 100" :step="1" />
@@ -150,58 +143,88 @@
       <template #footer>
         <div class="drawer-actions">
           <el-button @click="gradeDrawer = false">取消</el-button>
-          <el-button type="primary" :icon="Check" :disabled="!selectedSubmission" @click="gradeSubmission">保存</el-button>
+          <el-button type="primary" :icon="Check" :loading="gradeSaving" :disabled="!selectedSubmission" @click="gradeSubmission">保存</el-button>
         </div>
       </template>
-    </el-drawer>
+    </WorkspaceDrawer>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Check, Plus, Upload } from '@element-plus/icons-vue'
-import dayjs from 'dayjs'
+import { Check, Edit, Plus, Upload } from '@element-plus/icons-vue'
+import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { courseService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
+import { formatDateTime } from '../utils/display'
 import type { Assignment, Submission } from '../types'
 
 const assignments = ref<Assignment[]>([])
 const submissions = ref<Submission[]>([])
+const selectedAssignmentId = ref<number | undefined>(undefined)
 const selectedSubmission = ref<Submission | null>(null)
+const editingAssignment = ref<Assignment | null>(null)
 const assignmentDrawer = ref(false)
 const submissionDrawer = ref(false)
 const gradeDrawer = ref(false)
+const loading = ref(false)
+const assignmentSaving = ref(false)
+const submissionSaving = ref(false)
+const gradeSaving = ref(false)
 const assignmentForm = reactive({ title: '', description: '', dueTime: '', totalScore: 100, status: 1 })
-const submissionForm = reactive({ assignmentId: 1, content: '', status: 0 })
+const submissionForm = reactive({ assignmentId: undefined as number | undefined, content: '', status: 0 })
 const gradeForm = reactive({ score: 0, feedback: '' })
-const selectedAssignment = computed(() => assignments.value.find((assignment) => assignment.id === submissionForm.assignmentId))
-const canCreateAssignment = computed(() => Boolean(assignmentForm.title.trim() && assignmentForm.dueTime))
+
+const canManageAssignment = computed(() => can('CREATE_ASSIGNMENT'))
+const canSubmitAssignment = computed(() => can('SUBMIT_ASSIGNMENT'))
+const canGradeSubmission = computed(() => can('GRADE_SUBMISSION'))
+const selectedAssignment = computed(() => assignments.value.find((assignment) => assignment.id === selectedAssignmentId.value))
+const assignmentDrawerTitle = computed(() => editingAssignment.value ? '编辑作业' : '发布作业')
+const submissionAssignmentTitle = computed(() => assignments.value.find((assignment) => assignment.id === submissionForm.assignmentId)?.title || '-')
+const canSaveAssignment = computed(() => Boolean(assignmentForm.title.trim() && assignmentForm.dueTime && assignmentForm.totalScore > 0))
 const canCreateSubmission = computed(() => Boolean(submissionForm.assignmentId && submissionForm.content.trim()))
 
 function formatDueTime(value?: string) {
-  return value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'
+  return formatDateTime(value)
 }
 
 async function loadAssignments() {
-  assignments.value = await courseService.getAssignments(currentCourseId.value)
-  if (assignments.value.length && !assignments.value.some((assignment) => assignment.id === submissionForm.assignmentId)) {
-    submissionForm.assignmentId = assignments.value[0].id
+  loading.value = true
+  try {
+    assignments.value = await courseService.getAssignments(currentCourseId.value)
+    if (assignments.value.length && !assignments.value.some((assignment) => assignment.id === selectedAssignmentId.value)) {
+      selectedAssignmentId.value = assignments.value[0].id
+    }
+    if (!assignments.value.length) {
+      selectedAssignmentId.value = undefined
+    }
+    await loadSubmissions()
+  } finally {
+    loading.value = false
   }
-  await loadSubmissions()
 }
 
 async function loadSubmissions() {
-  if (!submissionForm.assignmentId) {
+  if (!selectedAssignmentId.value) {
     submissions.value = []
     return
   }
-  submissions.value = await courseService.getSubmissions(submissionForm.assignmentId)
+  submissions.value = await courseService.getSubmissions(selectedAssignmentId.value)
 }
 
-function selectAssignment(assignmentId: number) {
-  submissionForm.assignmentId = assignmentId
-  void loadSubmissions()
+function selectAssignmentByRow(row: Assignment) {
+  void selectAssignment(row.id)
+}
+
+async function selectAssignment(assignmentId: number) {
+  selectedAssignmentId.value = assignmentId
+  selectedSubmission.value = null
+  await loadSubmissions()
+}
+
+function assignmentRowClassName({ row }: { row: Assignment }) {
+  return row.id === selectedAssignmentId.value ? 'course-row-current' : ''
 }
 
 function openAssignmentDrawer() {
@@ -209,23 +232,36 @@ function openAssignmentDrawer() {
   assignmentDrawer.value = true
 }
 
+function openEditAssignmentDrawer(assignment: Assignment) {
+  editingAssignment.value = assignment
+  assignmentForm.title = assignment.title
+  assignmentForm.description = assignment.description || ''
+  assignmentForm.dueTime = assignment.dueTime
+  assignmentForm.totalScore = assignment.totalScore
+  assignmentForm.status = 1
+  assignmentDrawer.value = true
+}
+
 function resetAssignmentForm() {
+  editingAssignment.value = null
   assignmentForm.title = ''
   assignmentForm.description = ''
   assignmentForm.dueTime = ''
   assignmentForm.totalScore = 100
   assignmentForm.status = 1
+  assignmentSaving.value = false
 }
 
 function openSubmissionDrawer(assignmentId: number) {
   submissionForm.assignmentId = assignmentId
   submissionForm.content = ''
   submissionDrawer.value = true
-  void loadSubmissions()
 }
 
 function resetSubmissionForm() {
+  submissionForm.assignmentId = undefined
   submissionForm.content = ''
+  submissionSaving.value = false
 }
 
 function selectSubmission(submission: Submission) {
@@ -239,45 +275,73 @@ function resetGradeForm() {
   selectedSubmission.value = null
   gradeForm.score = 0
   gradeForm.feedback = ''
+  gradeSaving.value = false
 }
 
-async function createAssignment() {
-  await courseService.createAssignment({
+function assignmentPayload() {
+  return {
     courseId: currentCourseId.value,
-    ...assignmentForm
-  })
-  assignmentDrawer.value = false
-  resetAssignmentForm()
-  await loadAssignments()
+    title: assignmentForm.title.trim(),
+    description: assignmentForm.description,
+    dueTime: assignmentForm.dueTime,
+    totalScore: assignmentForm.totalScore,
+    status: assignmentForm.status
+  }
+}
+
+async function saveAssignment() {
+  assignmentSaving.value = true
+  try {
+    const saved = editingAssignment.value
+      ? await courseService.updateAssignment(editingAssignment.value.id, assignmentPayload())
+      : await courseService.createAssignment(assignmentPayload())
+    ElMessage.success(editingAssignment.value ? '作业已更新' : '作业已发布')
+    assignmentDrawer.value = false
+    await loadAssignments()
+    await selectAssignment(saved.id)
+  } finally {
+    assignmentSaving.value = false
+  }
 }
 
 async function createSubmission() {
-  await courseService.createSubmission({
-    assignmentId: submissionForm.assignmentId,
-    studentId: appState.session.userId,
-    content: submissionForm.content,
-    status: submissionForm.status
-  })
-  submissionDrawer.value = false
-  resetSubmissionForm()
-  ElMessage.success('已提交')
-  await loadSubmissions()
+  if (!submissionForm.assignmentId) return
+  submissionSaving.value = true
+  try {
+    await courseService.createSubmission({
+      assignmentId: submissionForm.assignmentId,
+      studentId: appState.session.userId,
+      content: submissionForm.content,
+      status: submissionForm.status
+    })
+    submissionDrawer.value = false
+    ElMessage.success('已提交')
+    if (selectedAssignmentId.value === submissionForm.assignmentId) {
+      await loadSubmissions()
+    }
+  } finally {
+    submissionSaving.value = false
+  }
 }
 
 async function gradeSubmission() {
   if (!selectedSubmission.value) return
-  await courseService.gradeSubmission(selectedSubmission.value.id, {
-    assignmentId: selectedSubmission.value.assignmentId,
-    studentId: selectedSubmission.value.studentId,
-    content: selectedSubmission.value.content,
-    score: gradeForm.score,
-    feedback: gradeForm.feedback,
-    status: 1
-  })
-  ElMessage.success('批改已保存')
-  gradeDrawer.value = false
-  resetGradeForm()
-  await loadSubmissions()
+  gradeSaving.value = true
+  try {
+    await courseService.gradeSubmission(selectedSubmission.value.id, {
+      assignmentId: selectedSubmission.value.assignmentId,
+      studentId: selectedSubmission.value.studentId,
+      content: selectedSubmission.value.content,
+      score: gradeForm.score,
+      feedback: gradeForm.feedback,
+      status: 1
+    })
+    ElMessage.success('批改已保存')
+    gradeDrawer.value = false
+    await loadSubmissions()
+  } finally {
+    gradeSaving.value = false
+  }
 }
 
 onMounted(loadAssignments)
@@ -285,13 +349,10 @@ watch([currentCourseId, refreshSignal], () => {
   assignmentDrawer.value = false
   submissionDrawer.value = false
   gradeDrawer.value = false
+  selectedAssignmentId.value = undefined
   resetAssignmentForm()
   resetSubmissionForm()
   resetGradeForm()
   void loadAssignments()
-})
-watch(() => submissionForm.assignmentId, () => {
-  selectedSubmission.value = null
-  void loadSubmissions()
 })
 </script>
