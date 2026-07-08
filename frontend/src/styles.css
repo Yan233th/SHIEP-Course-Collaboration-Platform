@@ -1032,6 +1032,37 @@ a {
   margin: 0 6px 6px 0;
 }
 
+.resource-tag-bar {
+  min-height: 34px;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 12px;
+  padding: 10px 12px 4px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.resource-tag-bar > span {
+  margin: 2px 4px 6px 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.clickable-tag {
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickable-tag.active {
+  border-color: var(--app-brand-soft-strong);
+  color: var(--app-brand-deep);
+  background: rgb(var(--app-brand-rgb) / 8%);
+}
+
 .form-actions {
   display: flex;
   align-items: center;

@@ -16,9 +16,24 @@
       </el-select>
       <el-input v-model="resourceTag" placeholder="标签" clearable />
       <el-button :icon="Search" @click="loadResources">查询</el-button>
+      <el-button v-if="hasActiveFilters" :icon="Close" @click="clearFilters">清除筛选</el-button>
       <el-upload v-if="can('UPLOAD_RESOURCE')" :http-request="uploadFile" :show-file-list="false">
         <el-button :icon="Upload">上传文件</el-button>
       </el-upload>
+    </div>
+
+    <div v-if="tagOptions.length" class="resource-tag-bar">
+      <span>资源标签</span>
+      <el-tag
+        v-for="tag in tagOptions"
+        :key="tag"
+        effect="plain"
+        class="tag-chip clickable-tag"
+        :class="{ active: resourceTag === tag }"
+        @click="selectTag(tag)"
+      >
+        {{ tag }}
+      </el-tag>
     </div>
 
     <el-table :data="resources" height="calc(100vh - 270px)" empty-text="暂无课程资源">
@@ -26,7 +41,16 @@
       <el-table-column prop="category" label="分类" width="120" />
       <el-table-column label="标签">
         <template #default="{ row }">
-          <el-tag v-for="tag in tagList(row.tags)" :key="tag" effect="plain" class="tag-chip">{{ tag }}</el-tag>
+          <el-tag
+            v-for="tag in tagList(row.tags)"
+            :key="tag"
+            effect="plain"
+            class="tag-chip clickable-tag"
+            :class="{ active: resourceTag === tag }"
+            @click.stop="selectTag(tag)"
+          >
+            {{ tag }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="预览" width="90">
@@ -39,16 +63,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { UploadRequestOptions } from 'element-plus'
-import { Search, Upload } from '@element-plus/icons-vue'
+import { Close, Search, Upload } from '@element-plus/icons-vue'
 import { courseService, fileService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import type { ResourceItem } from '../types'
 
 const resources = ref<ResourceItem[]>([])
+const allResources = ref<ResourceItem[]>([])
 const resourceCategory = ref('')
 const resourceTag = ref('')
+const hasActiveFilters = computed(() => Boolean(resourceCategory.value || resourceTag.value))
+const tagOptions = computed(() => {
+  const tags = new Set<string>()
+  allResources.value.forEach((resource) => {
+    tagList(resource.tags).forEach((tag) => tags.add(tag))
+  })
+  return [...tags].sort((a, b) => a.localeCompare(b, 'zh-CN'))
+})
 
 function tagList(tags?: string) {
   return (tags || '')
@@ -65,6 +98,23 @@ async function loadResources() {
   })
 }
 
+async function loadTagOptions() {
+  allResources.value = await courseService.getResources({
+    courseId: currentCourseId.value
+  })
+}
+
+async function selectTag(tag: string) {
+  resourceTag.value = resourceTag.value === tag ? '' : tag
+  await loadResources()
+}
+
+async function clearFilters() {
+  resourceCategory.value = ''
+  resourceTag.value = ''
+  await loadResources()
+}
+
 async function uploadFile(option: UploadRequestOptions) {
   const file = await fileService.upload(option.file, appState.session.userId, 'resource')
   await courseService.createResource({
@@ -76,9 +126,20 @@ async function uploadFile(option: UploadRequestOptions) {
     uploaderId: appState.session.userId,
     status: 1
   })
+  await loadTagOptions()
   await loadResources()
 }
 
-onMounted(loadResources)
-watch([currentCourseId, refreshSignal], loadResources)
+async function loadResourcePage() {
+  await loadTagOptions()
+  await loadResources()
+}
+
+onMounted(loadResourcePage)
+watch(currentCourseId, async () => {
+  resourceCategory.value = ''
+  resourceTag.value = ''
+  await loadResourcePage()
+})
+watch(refreshSignal, loadResourcePage)
 </script>
