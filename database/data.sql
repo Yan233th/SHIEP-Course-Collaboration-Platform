@@ -21,6 +21,7 @@ INSERT INTO course_member (course_id, user_id, role_code) VALUES
   (1, 4, 'STUDENT'),
   (1, 5, 'STUDENT'),
   (2, 2, 'TEACHER'),
+  (2, 3, 'STUDENT'),
   (2, 4, 'STUDENT');
 
 INSERT INTO file_metadata (id, original_name, storage_name, storage_path, content_type, size_bytes, uploader_id, biz_type) VALUES
