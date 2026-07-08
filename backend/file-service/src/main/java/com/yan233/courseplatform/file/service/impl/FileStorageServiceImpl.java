@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -40,7 +41,7 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
             ext = original.substring(dot);
         }
         String storageName = UUID.randomUUID() + ext;
-        Path directory = Path.of(storageDir, LocalDate.now().toString());
+        Path directory = storageRoot().resolve(LocalDate.now().toString());
         Path target = directory.resolve(storageName);
         try {
             Files.createDirectories(directory);
@@ -51,7 +52,7 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
         FileMetadata metadata = new FileMetadata();
         metadata.setOriginalName(original);
         metadata.setStorageName(storageName);
-        metadata.setStoragePath(target.toString());
+        metadata.setStoragePath(target.normalize().toString());
         metadata.setContentType(file.getContentType());
         metadata.setSizeBytes(file.getSize());
         metadata.setUploaderId(uploaderId);
@@ -69,7 +70,7 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
             throw new BusinessException("文件不存在");
         }
         try {
-            Resource resource = new UrlResource(Path.of(metadata.getStoragePath()).toUri());
+            Resource resource = new UrlResource(resolveStoragePath(metadata.getStoragePath()).toUri());
             if (!resource.exists()) {
                 throw new BusinessException("文件内容不存在");
             }
@@ -88,5 +89,30 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
                 .map(f -> new FileBrief(f.getId(), f.getOriginalName(), f.getContentType(), f.getSizeBytes(), "/api/files/preview/" + f.getId()))
                 .toList();
     }
-}
 
+    private Path storageRoot() {
+        return Path.of(storageDir).toAbsolutePath().normalize();
+    }
+
+    private Path resolveStoragePath(String storagePath) {
+        Path stored = Path.of(storagePath);
+        if (stored.isAbsolute()) {
+            return stored.normalize();
+        }
+
+        List<Path> candidates = new ArrayList<>();
+        candidates.add(stored.toAbsolutePath().normalize());
+        candidates.add(storageRoot().resolve(stored).normalize());
+
+        Path current = Path.of("").toAbsolutePath().normalize();
+        while (current != null) {
+            candidates.add(current.resolve(stored).normalize());
+            current = current.getParent();
+        }
+
+        return candidates.stream()
+                .filter(Files::exists)
+                .findFirst()
+                .orElse(candidates.get(0));
+    }
+}

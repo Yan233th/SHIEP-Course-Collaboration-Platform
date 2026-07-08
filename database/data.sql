@@ -24,7 +24,7 @@ INSERT INTO course_member (course_id, user_id, role_code) VALUES
   (2, 4, 'STUDENT');
 
 INSERT INTO file_metadata (id, original_name, storage_name, storage_path, content_type, size_bytes, uploader_id, biz_type) VALUES
-  (1, 'JavaEE课程说明.pdf', 'seed-javaee.pdf', 'uploads/seed-javaee.pdf', 'application/pdf', 1024, 2, 'resource');
+  (1, 'JavaEE课程说明.pdf', 'seed-javaee.pdf', 'database/seed-files/seed-javaee.pdf', 'application/pdf', 743, 2, 'resource');
 
 INSERT INTO course_notice (course_id, title, content, publisher_id, pinned, status) VALUES
   (1, '第一次课程项目分组通知', '请同学们在本周内完成课程项目组队。', 2, 1, 1),
