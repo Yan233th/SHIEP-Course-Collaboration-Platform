@@ -17,8 +17,8 @@ public class AssignmentRequest {
     private String title;
     @Size(max = 2000)
     private String description;
+    private Long fileId;
     private LocalDateTime dueTime;
     private BigDecimal totalScore = BigDecimal.valueOf(100);
     private Integer status = 1;
 }
-

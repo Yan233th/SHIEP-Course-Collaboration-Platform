@@ -25,7 +25,8 @@ INSERT INTO course_member (course_id, user_id, role_code) VALUES
   (2, 4, 'STUDENT');
 
 INSERT INTO file_metadata (id, original_name, storage_name, storage_path, content_type, size_bytes, uploader_id, biz_type) VALUES
-  (1, 'JavaEE课程说明.pdf', 'seed-javaee.pdf', 'database/seed-files/seed-javaee.pdf', 'application/pdf', 743, 2, 'resource');
+  (1, 'JavaEE课程说明.pdf', 'seed-javaee.pdf', 'database/seed-files/seed-javaee.pdf', 'application/pdf', 743, 2, 'resource'),
+  (2, '需求分析与ER图作业说明.pdf', 'seed-javaee.pdf', 'database/seed-files/seed-javaee.pdf', 'application/pdf', 743, 2, 'assignment');
 
 INSERT INTO course_notice (course_id, title, content, publisher_id, pinned, status) VALUES
   (1, '第一次课程项目分组通知', '请同学们在本周内完成课程项目组队。', 2, 1, 1),
@@ -34,9 +35,9 @@ INSERT INTO course_notice (course_id, title, content, publisher_id, pinned, stat
 INSERT INTO course_resource (course_id, file_id, title, category, tags, description, uploader_id, status) VALUES
   (1, 1, '课程设计要求', '课件', 'JavaEE,数据库,课设', '课程设计完整要求说明。', 2, 1);
 
-INSERT INTO assignment (id, course_id, title, description, due_time, total_score, status) VALUES
-  (1, 1, '需求分析与ER图', '提交需求分析、ER图和关系模式。', '2026-07-10 23:59:59', 100, 1),
-  (2, 1, '后端接口实现', '提交后端接口和测试截图。', '2026-07-17 23:59:59', 100, 1);
+INSERT INTO assignment (id, course_id, title, description, file_id, due_time, total_score, status) VALUES
+  (1, 1, '需求分析与ER图', '提交需求分析、ER图和关系模式。', 2, '2026-07-10 23:59:59', 100, 1),
+  (2, 1, '后端接口实现', '提交后端接口和测试截图。', NULL, '2026-07-17 23:59:59', 100, 1);
 
 INSERT INTO assignment_submission (assignment_id, student_id, file_id, content, score, feedback, status) VALUES
   (1, 4, NULL, '已完成需求分析和初版ER图。', 88, '结构清晰，补充约束说明。', 1),

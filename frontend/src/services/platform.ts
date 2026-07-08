@@ -16,7 +16,8 @@ import type {
   Session,
   Showcase,
   Submission,
-  UserRow
+  UserRow,
+  FileBrief
 } from '../types'
 
 export interface UserQuery {
@@ -212,6 +213,6 @@ export const fileService = {
     form.append('file', file)
     form.append('uploaderId', String(uploaderId))
     form.append('bizType', bizType)
-    return unwrap<{ id: number; originalName: string }>(http.post('/files/upload', form))
+    return unwrap<FileBrief>(http.post('/files/upload', form))
   }
 }

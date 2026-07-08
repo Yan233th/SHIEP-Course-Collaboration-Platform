@@ -20,6 +20,7 @@ public class Assignment implements Serializable {
     private Long courseId;
     private String title;
     private String description;
+    private Long fileId;
     private LocalDateTime dueTime;
     private BigDecimal totalScore;
     private Integer status;
@@ -30,4 +31,3 @@ public class Assignment implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }
-

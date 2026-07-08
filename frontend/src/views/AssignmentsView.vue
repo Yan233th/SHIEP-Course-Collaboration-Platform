@@ -23,9 +23,15 @@
           empty-text="暂无作业"
           @row-click="selectAssignmentByRow"
         >
-          <el-table-column prop="title" label="作业" min-width="180" />
+          <el-table-column prop="title" label="作业" min-width="190" />
           <el-table-column label="截止时间" width="150">
             <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
+          </el-table-column>
+          <el-table-column label="附件" width="78">
+            <template #default="{ row }">
+              <el-tag v-if="row.fileId" size="small" effect="plain">有</el-tag>
+              <span v-else class="muted">-</span>
+            </template>
           </el-table-column>
           <el-table-column prop="totalScore" label="总分" width="78" />
           <el-table-column label="操作" width="180" fixed="right">
@@ -44,7 +50,7 @@
           <section class="assignment-detail">
             <div class="assignment-detail-head">
               <div>
-                <span>作业说明</span>
+                <span>作业内容</span>
                 <strong>{{ selectedAssignment.title }}</strong>
               </div>
               <div class="assignment-detail-actions">
@@ -52,7 +58,14 @@
                 <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
               </div>
             </div>
-            <p>{{ selectedAssignment.description || '暂无说明' }}</p>
+            <p class="assignment-description">{{ selectedAssignment.description || '暂无说明' }}</p>
+            <div v-if="selectedAssignment.fileId" class="assignment-file-strip">
+              <span>作业附件</span>
+              <el-link :href="fileUrl(selectedAssignment.fileId, selectedAssignment.file)" target="_blank">
+                {{ fileName(selectedAssignment.fileId, selectedAssignment.file) }}
+              </el-link>
+              <small>{{ formatFileSize(selectedAssignment.file?.sizeBytes) }}</small>
+            </div>
             <dl>
               <div>
                 <dt>截止时间</dt>
@@ -75,9 +88,15 @@
             </div>
             <el-table :data="submissions" max-height="300px" empty-text="暂无提交">
               <el-table-column prop="studentId" label="学生ID" width="90" />
-              <el-table-column label="内容">
+              <el-table-column label="内容" min-width="180">
                 <template #default="{ row }">
                   <span class="table-ellipsis">{{ row.content || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="附件" width="92">
+                <template #default="{ row }">
+                  <el-link v-if="row.fileId" :href="fileUrl(row.fileId, row.file)" target="_blank">打开</el-link>
+                  <span v-else class="muted">-</span>
                 </template>
               </el-table-column>
               <el-table-column label="成绩" width="82">
@@ -107,6 +126,26 @@
         </el-form-item>
         <el-form-item label="总分"><el-input-number v-model="assignmentForm.totalScore" :min="1" :max="1000" /></el-form-item>
         <el-form-item label="说明"><el-input v-model="assignmentForm.description" type="textarea" :rows="6" /></el-form-item>
+        <el-form-item label="作业附件">
+          <div class="drawer-file-field">
+            <div v-if="assignmentForm.fileId" class="drawer-current-file">
+              <el-link :href="fileUrl(assignmentForm.fileId, editingAssignment?.file)" target="_blank">
+                {{ fileName(assignmentForm.fileId, editingAssignment?.file) }}
+              </el-link>
+              <el-button size="small" text type="danger" @click="removeAssignmentFile">移除</el-button>
+            </div>
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :limit="1"
+              :file-list="assignmentFileList"
+              :on-change="handleAssignmentFileChange"
+              :on-remove="handleAssignmentFileRemove"
+            >
+              <el-button :icon="Upload">{{ assignmentForm.fileId ? '替换附件' : '选择附件' }}</el-button>
+            </el-upload>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="drawer-actions">
@@ -124,6 +163,18 @@
           <el-input :model-value="submissionAssignmentTitle" disabled />
         </el-form-item>
         <el-form-item label="提交内容"><el-input v-model="submissionForm.content" type="textarea" :rows="8" /></el-form-item>
+        <el-form-item label="提交附件">
+          <el-upload
+            action="#"
+            :auto-upload="false"
+            :limit="1"
+            :file-list="submissionFileList"
+            :on-change="handleSubmissionFileChange"
+            :on-remove="handleSubmissionFileRemove"
+          >
+            <el-button :icon="Upload">选择附件</el-button>
+          </el-upload>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="drawer-actions">
@@ -133,7 +184,14 @@
       </template>
     </WorkspaceDrawer>
 
-    <WorkspaceDrawer v-model="gradeDrawer" title="批改提交" size="420px" @closed="resetGradeForm">
+    <WorkspaceDrawer v-model="gradeDrawer" title="批改提交" size="460px" @closed="resetGradeForm">
+      <div v-if="selectedSubmission" class="grading-preview">
+        <span>学生提交</span>
+        <p>{{ selectedSubmission.content || '仅提交附件' }}</p>
+        <el-link v-if="selectedSubmission.fileId" :href="fileUrl(selectedSubmission.fileId, selectedSubmission.file)" target="_blank">
+          {{ fileName(selectedSubmission.fileId, selectedSubmission.file) }}
+        </el-link>
+      </div>
       <el-form :model="gradeForm" label-position="top" class="drawer-form">
         <el-form-item label="分数">
           <el-input-number v-model="gradeForm.score" :min="0" :max="selectedAssignment?.totalScore || 100" :step="1" />
@@ -152,13 +210,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type UploadFile, type UploadUserFile } from 'element-plus'
 import { Check, Edit, Plus, Upload } from '@element-plus/icons-vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
-import { courseService } from '../services/platform'
+import { courseService, fileService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import { formatDateTime } from '../utils/display'
-import type { Assignment, Submission } from '../types'
+import type { Assignment, FileBrief, Submission } from '../types'
 
 const assignments = ref<Assignment[]>([])
 const submissions = ref<Submission[]>([])
@@ -172,8 +230,24 @@ const loading = ref(false)
 const assignmentSaving = ref(false)
 const submissionSaving = ref(false)
 const gradeSaving = ref(false)
-const assignmentForm = reactive({ title: '', description: '', dueTime: '', totalScore: 100, status: 1 })
-const submissionForm = reactive({ assignmentId: undefined as number | undefined, content: '', status: 0 })
+const assignmentFile = ref<File | null>(null)
+const assignmentFileList = ref<UploadUserFile[]>([])
+const submissionFile = ref<File | null>(null)
+const submissionFileList = ref<UploadUserFile[]>([])
+const assignmentForm = reactive({
+  title: '',
+  description: '',
+  fileId: undefined as number | undefined,
+  dueTime: '',
+  totalScore: 100,
+  status: 1
+})
+const submissionForm = reactive({
+  assignmentId: undefined as number | undefined,
+  fileId: undefined as number | undefined,
+  content: '',
+  status: 0
+})
 const gradeForm = reactive({ score: 0, feedback: '' })
 
 const canManageAssignment = computed(() => can('CREATE_ASSIGNMENT'))
@@ -183,10 +257,28 @@ const selectedAssignment = computed(() => assignments.value.find((assignment) =>
 const assignmentDrawerTitle = computed(() => editingAssignment.value ? '编辑作业' : '发布作业')
 const submissionAssignmentTitle = computed(() => assignments.value.find((assignment) => assignment.id === submissionForm.assignmentId)?.title || '-')
 const canSaveAssignment = computed(() => Boolean(assignmentForm.title.trim() && assignmentForm.dueTime && assignmentForm.totalScore > 0))
-const canCreateSubmission = computed(() => Boolean(submissionForm.assignmentId && submissionForm.content.trim()))
+const canCreateSubmission = computed(() => {
+  return Boolean(submissionForm.assignmentId && (submissionForm.content.trim() || submissionFile.value))
+})
 
 function formatDueTime(value?: string) {
   return formatDateTime(value)
+}
+
+function fileUrl(fileId?: number, file?: FileBrief | null) {
+  if (file?.previewUrl) return file.previewUrl
+  return fileId ? `/api/files/preview/${fileId}` : ''
+}
+
+function fileName(fileId?: number, file?: FileBrief | null) {
+  return file?.originalName || (fileId ? `附件 #${fileId}` : '-')
+}
+
+function formatFileSize(size?: number) {
+  if (!size && size !== 0) return ''
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
 
 async function loadAssignments() {
@@ -236,9 +328,12 @@ function openEditAssignmentDrawer(assignment: Assignment) {
   editingAssignment.value = assignment
   assignmentForm.title = assignment.title
   assignmentForm.description = assignment.description || ''
+  assignmentForm.fileId = assignment.fileId
   assignmentForm.dueTime = assignment.dueTime
   assignmentForm.totalScore = assignment.totalScore
   assignmentForm.status = 1
+  assignmentFile.value = null
+  assignmentFileList.value = []
   assignmentDrawer.value = true
 }
 
@@ -246,22 +341,57 @@ function resetAssignmentForm() {
   editingAssignment.value = null
   assignmentForm.title = ''
   assignmentForm.description = ''
+  assignmentForm.fileId = undefined
   assignmentForm.dueTime = ''
   assignmentForm.totalScore = 100
   assignmentForm.status = 1
+  assignmentFile.value = null
+  assignmentFileList.value = []
   assignmentSaving.value = false
+}
+
+function handleAssignmentFileChange(file: UploadFile) {
+  assignmentFileList.value = [file]
+  assignmentFile.value = file.raw || null
+}
+
+function handleAssignmentFileRemove() {
+  assignmentFile.value = null
+  assignmentFileList.value = []
+}
+
+function removeAssignmentFile() {
+  assignmentForm.fileId = undefined
+  assignmentFile.value = null
+  assignmentFileList.value = []
 }
 
 function openSubmissionDrawer(assignmentId: number) {
   submissionForm.assignmentId = assignmentId
+  submissionForm.fileId = undefined
   submissionForm.content = ''
+  submissionFile.value = null
+  submissionFileList.value = []
   submissionDrawer.value = true
 }
 
 function resetSubmissionForm() {
   submissionForm.assignmentId = undefined
+  submissionForm.fileId = undefined
   submissionForm.content = ''
+  submissionFile.value = null
+  submissionFileList.value = []
   submissionSaving.value = false
+}
+
+function handleSubmissionFileChange(file: UploadFile) {
+  submissionFileList.value = [file]
+  submissionFile.value = file.raw || null
+}
+
+function handleSubmissionFileRemove() {
+  submissionFile.value = null
+  submissionFileList.value = []
 }
 
 function selectSubmission(submission: Submission) {
@@ -278,11 +408,12 @@ function resetGradeForm() {
   gradeSaving.value = false
 }
 
-function assignmentPayload() {
+function assignmentPayload(fileId?: number) {
   return {
     courseId: currentCourseId.value,
     title: assignmentForm.title.trim(),
     description: assignmentForm.description,
+    fileId,
     dueTime: assignmentForm.dueTime,
     totalScore: assignmentForm.totalScore,
     status: assignmentForm.status
@@ -292,9 +423,14 @@ function assignmentPayload() {
 async function saveAssignment() {
   assignmentSaving.value = true
   try {
+    let fileId = assignmentForm.fileId
+    if (assignmentFile.value) {
+      const uploaded = await fileService.upload(assignmentFile.value, appState.session.userId, 'assignment')
+      fileId = uploaded.id
+    }
     const saved = editingAssignment.value
-      ? await courseService.updateAssignment(editingAssignment.value.id, assignmentPayload())
-      : await courseService.createAssignment(assignmentPayload())
+      ? await courseService.updateAssignment(editingAssignment.value.id, assignmentPayload(fileId))
+      : await courseService.createAssignment(assignmentPayload(fileId))
     ElMessage.success(editingAssignment.value ? '作业已更新' : '作业已发布')
     assignmentDrawer.value = false
     await loadAssignments()
@@ -308,9 +444,15 @@ async function createSubmission() {
   if (!submissionForm.assignmentId) return
   submissionSaving.value = true
   try {
+    let fileId = submissionForm.fileId
+    if (submissionFile.value) {
+      const uploaded = await fileService.upload(submissionFile.value, appState.session.userId, 'submission')
+      fileId = uploaded.id
+    }
     await courseService.createSubmission({
       assignmentId: submissionForm.assignmentId,
       studentId: appState.session.userId,
+      fileId,
       content: submissionForm.content,
       status: submissionForm.status
     })
@@ -331,6 +473,7 @@ async function gradeSubmission() {
     await courseService.gradeSubmission(selectedSubmission.value.id, {
       assignmentId: selectedSubmission.value.assignmentId,
       studentId: selectedSubmission.value.studentId,
+      fileId: selectedSubmission.value.fileId,
       content: selectedSubmission.value.content,
       score: gradeForm.score,
       feedback: gradeForm.feedback,
@@ -356,3 +499,62 @@ watch([currentCourseId, refreshSignal], () => {
   void loadAssignments()
 })
 </script>
+
+<style scoped>
+.assignment-description {
+  white-space: pre-wrap;
+}
+
+.assignment-file-strip,
+.drawer-current-file,
+.grading-preview {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+}
+
+.assignment-file-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.assignment-file-strip small {
+  color: var(--app-muted);
+}
+
+.drawer-file-field {
+  display: grid;
+  gap: 10px;
+}
+
+.drawer-current-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.grading-preview {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.grading-preview span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grading-preview p {
+  margin: 0;
+  color: var(--app-ink);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+</style>

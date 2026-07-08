@@ -4,11 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yan233.courseplatform.common.api.Result;
 import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
+import com.yan233.courseplatform.common.dto.FileBrief;
 import com.yan233.courseplatform.common.exception.BusinessException;
 import com.yan233.courseplatform.common.web.UserContext;
-import com.yan233.courseplatform.course.dto.CourseAccess;
+import com.yan233.courseplatform.course.client.FileFeignClient;
 import com.yan233.courseplatform.course.dto.AssignmentRequest;
+import com.yan233.courseplatform.course.dto.AssignmentView;
+import com.yan233.courseplatform.course.dto.CourseAccess;
 import com.yan233.courseplatform.course.dto.SubmissionRequest;
+import com.yan233.courseplatform.course.dto.SubmissionView;
 import com.yan233.courseplatform.course.entity.Assignment;
 import com.yan233.courseplatform.course.entity.Submission;
 import com.yan233.courseplatform.course.mapper.AssignmentMapper;
@@ -26,7 +30,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping
@@ -34,48 +43,57 @@ public class AssignmentController {
     private final AssignmentMapper assignmentMapper;
     private final SubmissionMapper submissionMapper;
     private final CourseBizService courseService;
+    private final FileFeignClient fileFeignClient;
 
-    public AssignmentController(AssignmentMapper assignmentMapper, SubmissionMapper submissionMapper, CourseBizService courseService) {
+    public AssignmentController(AssignmentMapper assignmentMapper, SubmissionMapper submissionMapper, CourseBizService courseService, FileFeignClient fileFeignClient) {
         this.assignmentMapper = assignmentMapper;
         this.submissionMapper = submissionMapper;
         this.courseService = courseService;
+        this.fileFeignClient = fileFeignClient;
     }
 
     @GetMapping("/assignments")
-    public Result<List<Assignment>> assignments(@RequestParam Long courseId, HttpServletRequest servletRequest) {
+    public Result<List<AssignmentView>> assignments(@RequestParam Long courseId, HttpServletRequest servletRequest) {
         courseService.requireCanView(courseId, UserContext.from(servletRequest));
-        return Result.ok(assignmentMapper.selectList(new LambdaQueryWrapper<Assignment>()
+        List<Assignment> assignments = assignmentMapper.selectList(new LambdaQueryWrapper<Assignment>()
                 .eq(Assignment::getCourseId, courseId)
-                .orderByDesc(Assignment::getCreateTime)));
+                .orderByDesc(Assignment::getCreateTime));
+        return Result.ok(toAssignmentViews(assignments));
     }
 
     @PostMapping("/assignments")
-    public Result<Assignment> createAssignment(@RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
+    public Result<AssignmentView> createAssignment(@RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
         courseService.requireCourseStaff(request.getCourseId(), UserContext.from(servletRequest));
         Assignment assignment = new Assignment();
         BeanUtils.copyProperties(request, assignment);
         assignment.setDeleted(0);
         assignmentMapper.insert(assignment);
-        return Result.ok(assignment);
+        return Result.ok(toAssignmentViews(List.of(assignment)).get(0));
     }
 
     @PutMapping("/assignments/{id}")
-    public Result<Assignment> updateAssignment(@PathVariable Long id, @RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
+    public Result<AssignmentView> updateAssignment(@PathVariable Long id, @RequestBody @Valid AssignmentRequest request, HttpServletRequest servletRequest) {
         courseService.requireCourseStaff(request.getCourseId(), UserContext.from(servletRequest));
         Assignment assignment = assignmentMapper.selectById(id);
+        if (assignment == null) {
+            throw new BusinessException("作业不存在");
+        }
         BeanUtils.copyProperties(request, assignment);
         assignment.setId(id);
         assignmentMapper.updateById(assignment);
-        return Result.ok(assignment);
+        return Result.ok(toAssignmentViews(List.of(assignment)).get(0));
     }
 
     @PostMapping("/submissions")
-    public Result<Submission> submit(@RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
+    public Result<SubmissionView> submit(@RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         Assignment assignment = requireAssignment(request.getAssignmentId());
         CourseAccess access = courseService.access(assignment.getCourseId(), current);
         if (!access.actions().contains("SUBMIT_ASSIGNMENT")) {
             throw new BusinessException(403, "无权限提交该课程作业");
+        }
+        if (request.getFileId() == null && (request.getContent() == null || request.getContent().isBlank())) {
+            throw new BusinessException(400, "请填写提交内容或上传附件");
         }
         if (!current.isAdmin()) {
             request.setStudentId(current.userId());
@@ -84,11 +102,11 @@ public class AssignmentController {
         BeanUtils.copyProperties(request, submission);
         submission.setDeleted(0);
         submissionMapper.insert(submission);
-        return Result.ok(submission);
+        return Result.ok(toSubmissionViews(List.of(submission)).get(0));
     }
 
     @PutMapping("/submissions/{id}/grade")
-    public Result<Submission> grade(@PathVariable Long id, @RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
+    public Result<SubmissionView> grade(@PathVariable Long id, @RequestBody @Valid SubmissionRequest request, HttpServletRequest servletRequest) {
         Submission submission = submissionMapper.selectById(id);
         if (submission == null) {
             throw new BusinessException("提交记录不存在");
@@ -99,13 +117,13 @@ public class AssignmentController {
         submission.setFeedback(request.getFeedback());
         submission.setStatus(1);
         submissionMapper.updateById(submission);
-        return Result.ok(submission);
+        return Result.ok(toSubmissionViews(List.of(submission)).get(0));
     }
 
     @GetMapping("/submissions")
-    public Result<List<Submission>> submissions(@RequestParam(required = false) Long assignmentId,
-                                                @RequestParam(required = false) Long studentId,
-                                                HttpServletRequest servletRequest) {
+    public Result<List<SubmissionView>> submissions(@RequestParam(required = false) Long assignmentId,
+                                                    @RequestParam(required = false) Long studentId,
+                                                    HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         if (assignmentId != null) {
             Assignment assignment = requireAssignment(assignmentId);
@@ -122,7 +140,7 @@ public class AssignmentController {
                 .eq(assignmentId != null, Submission::getAssignmentId, assignmentId)
                 .eq(studentId != null, Submission::getStudentId, studentId)
                 .orderByDesc(Submission::getCreateTime);
-        return Result.ok(submissionMapper.selectList(wrapper));
+        return Result.ok(toSubmissionViews(submissionMapper.selectList(wrapper)));
     }
 
     private Assignment requireAssignment(Long assignmentId) {
@@ -131,5 +149,60 @@ public class AssignmentController {
             throw new BusinessException("作业不存在");
         }
         return assignment;
+    }
+
+    private List<AssignmentView> toAssignmentViews(List<Assignment> assignments) {
+        Map<Long, FileBrief> files = filesById(assignments.stream().map(Assignment::getFileId).toList());
+        return assignments.stream()
+                .map(assignment -> new AssignmentView(
+                        assignment.getId(),
+                        assignment.getCourseId(),
+                        assignment.getTitle(),
+                        assignment.getDescription(),
+                        assignment.getFileId(),
+                        files.get(assignment.getFileId()),
+                        assignment.getDueTime(),
+                        assignment.getTotalScore(),
+                        assignment.getStatus(),
+                        assignment.getCreateTime(),
+                        assignment.getUpdateTime()))
+                .toList();
+    }
+
+    private List<SubmissionView> toSubmissionViews(List<Submission> submissions) {
+        Map<Long, FileBrief> files = filesById(submissions.stream().map(Submission::getFileId).toList());
+        return submissions.stream()
+                .map(submission -> new SubmissionView(
+                        submission.getId(),
+                        submission.getAssignmentId(),
+                        submission.getStudentId(),
+                        submission.getFileId(),
+                        files.get(submission.getFileId()),
+                        submission.getContent(),
+                        submission.getScore(),
+                        submission.getFeedback(),
+                        submission.getStatus(),
+                        submission.getCreateTime(),
+                        submission.getUpdateTime()))
+                .toList();
+    }
+
+    private Map<Long, FileBrief> filesById(List<Long> fileIds) {
+        List<Long> ids = fileIds.stream()
+                .flatMap(id -> id == null ? Stream.empty() : Stream.of(id))
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            Result<List<FileBrief>> result = fileFeignClient.filesByIds(ids);
+            if (result.getCode() == 200 && result.getData() != null) {
+                return result.getData().stream().collect(Collectors.toMap(FileBrief::id, Function.identity(), (a, b) -> a));
+            }
+        } catch (RuntimeException ignored) {
+            return Collections.emptyMap();
+        }
+        return Collections.emptyMap();
     }
 }

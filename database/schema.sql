@@ -138,6 +138,7 @@ CREATE TABLE assignment (
   course_id BIGINT NOT NULL,
   title VARCHAR(120) NOT NULL,
   description TEXT,
+  file_id BIGINT,
   due_time DATETIME,
   total_score DECIMAL(5,2) NOT NULL DEFAULT 100.00,
   status TINYINT NOT NULL DEFAULT 1,
@@ -145,6 +146,7 @@ CREATE TABLE assignment (
   create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_assignment_course FOREIGN KEY (course_id) REFERENCES course(id),
+  CONSTRAINT fk_assignment_file FOREIGN KEY (file_id) REFERENCES file_metadata(id),
   CONSTRAINT ck_assignment_score CHECK (total_score > 0),
   INDEX idx_assignment_course_due (course_id, due_time)
 ) COMMENT='作业';

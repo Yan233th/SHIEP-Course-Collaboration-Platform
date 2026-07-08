@@ -89,11 +89,21 @@ export interface ResourceItem {
   tags?: string
 }
 
+export interface FileBrief {
+  id: number
+  originalName: string
+  contentType?: string
+  sizeBytes?: number
+  previewUrl?: string
+}
+
 export interface Assignment {
   id: number
   courseId: number
   title: string
   description?: string
+  fileId?: number
+  file?: FileBrief | null
   dueTime: string
   totalScore: number
 }
@@ -103,6 +113,7 @@ export interface Submission {
   assignmentId: number
   studentId: number
   fileId?: number
+  file?: FileBrief | null
   content?: string
   score?: number
   feedback?: string
