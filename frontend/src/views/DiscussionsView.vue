@@ -546,7 +546,12 @@ watch([currentCourseId, refreshSignal], () => {
 }
 
 .dz-empty {
-  padding: 14px;
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: var(--app-surface-soft);
   color: var(--app-muted);
   font-size: 13px;
 }
