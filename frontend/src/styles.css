@@ -1781,14 +1781,15 @@ body {
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease,
+    box-shadow 0.18s ease,
     transform 0.24s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .quick-link:hover {
   border-color: var(--app-brand-soft-strong);
   background: var(--app-surface);
-  box-shadow: none;
-  transform: translateX(3px);
+  box-shadow: 0 8px 22px rgb(25 33 38 / 7%);
+  transform: translateY(-2px);
 }
 
 .quick-link strong {
