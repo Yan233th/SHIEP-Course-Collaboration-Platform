@@ -13,7 +13,7 @@
         </div>
       </div>
       <div class="dashboard-course-summary">
-        <Transition name="course-fade" mode="out-in">
+        <Transition name="course-fade">
           <div :key="currentCourseId" class="dashboard-course-summary-inner">
             <span>当前课程</span>
             <strong>{{ currentCourseLabel }}</strong>
@@ -31,18 +31,16 @@
       </div>
     </section>
 
-    <Transition name="course-fade" mode="out-in">
-      <div :key="`metrics-${currentCourseId}`" class="metric-grid">
-        <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
-          <span class="metric-icon">
-            <el-icon><component :is="metric.icon" /></el-icon>
-          </span>
-          <span class="metric-label">{{ metric.label }}</span>
-          <strong>{{ metric.value }}</strong>
-          <small>{{ metric.caption }}</small>
-        </article>
-      </div>
-    </Transition>
+    <div class="metric-grid">
+      <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
+        <span class="metric-icon">
+          <el-icon><component :is="metric.icon" /></el-icon>
+        </span>
+        <span class="metric-label">{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.caption }}</small>
+      </article>
+    </div>
 
     <div class="dashboard-grid">
       <section class="panel">
@@ -72,7 +70,7 @@
           </div>
           <strong>{{ roleLabel(displayCourseAccess?.courseRole || currentRole) }}</strong>
         </div>
-        <Transition name="course-fade" mode="out-in">
+        <Transition name="course-fade">
           <div :key="`status-${currentCourseId}-${displayCourseAccess?.courseRole || 'none'}`" class="status-list">
             <div>
               <span>系统身份</span>
@@ -89,10 +87,10 @@
           </div>
         </Transition>
         <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
-        <div class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
+        <TransitionGroup name="permission-chip" tag="div" class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
           <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
-          <span v-if="!visibleActions.length" class="muted">暂无课程操作权限</span>
-        </div>
+          <span v-if="!visibleActions.length" key="empty" class="muted">暂无课程操作权限</span>
+        </TransitionGroup>
       </section>
     </div>
 
@@ -118,7 +116,7 @@
           <h2>当前课程</h2>
         </div>
       </div>
-      <Transition name="course-fade" mode="out-in">
+      <Transition name="course-fade">
         <dl :key="`summary-${currentCourseId}`" class="course-summary">
           <div>
             <dt>课程编号</dt>

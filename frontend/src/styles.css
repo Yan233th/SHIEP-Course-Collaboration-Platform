@@ -811,7 +811,24 @@ a {
 
 .capability-tags .el-tag {
   flex: 0 0 auto;
-  transition: none;
+}
+
+.permission-chip-enter-active,
+.permission-chip-leave-active,
+.permission-chip-move {
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.permission-chip-enter-from {
+  opacity: 0;
+  transform: translateY(7px) rotateX(-10deg);
+}
+
+.permission-chip-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .course-summary {
@@ -1064,6 +1081,21 @@ a {
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.group-name-cell {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-name-cell > span {
+  overflow: hidden;
+  color: var(--app-ink-strong);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .clickable-tag {
@@ -1968,8 +2000,8 @@ body {
 }
 
 .workspace.is-course-switching {
-  opacity: 0.78;
-  transform: translateY(3px);
+  opacity: 0.88;
+  transform: translateY(2px);
 }
 
 .course-context {
@@ -1977,23 +2009,23 @@ body {
 }
 
 .course-context.is-switching {
-  opacity: 0.78;
+  opacity: 0.86;
   transform: translateY(1px);
 }
 
 .course-fade-enter-active,
 .course-fade-leave-active {
-  transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+  transition: opacity 0.12s ease, transform 0.16s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .course-fade-enter-from {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(3px);
 }
 
 .course-fade-leave-to {
   opacity: 0;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 1180px) {

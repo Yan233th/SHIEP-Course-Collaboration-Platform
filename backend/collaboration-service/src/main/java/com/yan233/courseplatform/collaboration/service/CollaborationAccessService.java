@@ -36,6 +36,17 @@ public class CollaborationAccessService {
         }
     }
 
+    public void requireCanJoinGroup(Long courseId, CurrentUser currentUser) {
+        if (currentUser != null && currentUser.isAdmin()) {
+            return;
+        }
+        String role = courseRole(courseId, currentUser);
+        if ("STUDENT".equals(role)) {
+            return;
+        }
+        throw new BusinessException(403, "无权限加入或退出该课程项目组");
+    }
+
     public void requireCanViewGroup(Long groupId, CurrentUser currentUser) {
         ProjectGroup group = requireGroup(groupId);
         requireCanViewCourse(group.getCourseId(), currentUser);

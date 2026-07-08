@@ -150,7 +150,7 @@ async function switchCourse(value: number) {
   } finally {
     window.setTimeout(() => {
       courseSwitching.value = false
-    }, 180)
+    }, 90)
   }
 }
 

@@ -14,7 +14,14 @@
     </div>
 
     <el-table :data="groups" height="calc(100vh - 270px)" empty-text="暂无项目组">
-      <el-table-column prop="name" label="组名" />
+      <el-table-column label="组名" min-width="180">
+        <template #default="{ row }">
+          <div class="group-name-cell">
+            <span>{{ row.name }}</span>
+            <el-tag v-if="isJoined(row.id)" size="small" type="success" effect="plain">已加入</el-tag>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="topic" label="选题" />
       <el-table-column label="人数" width="90">
         <template #default="{ row }">{{ row.currentMembers }}/{{ row.maxMembers }}</template>
@@ -22,7 +29,6 @@
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
           <el-button size="small" @click="openMembersDrawer(row)">成员</el-button>
-          <el-tag v-if="isJoined(row.id)" size="small" type="success" effect="plain">已加入</el-tag>
           <template v-if="can('JOIN_GROUP')">
             <el-button v-if="isJoined(row.id)" size="small" type="danger" text @click="leaveGroup(row.id)">退出</el-button>
             <el-button v-else size="small" :disabled="row.currentMembers >= row.maxMembers" @click="joinGroup(row.id)">加入</el-button>

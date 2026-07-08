@@ -11,7 +11,6 @@ import com.yan233.courseplatform.collaboration.mapper.ProjectMemberMapper;
 import com.yan233.courseplatform.collaboration.service.CollaborationAccessService;
 import com.yan233.courseplatform.collaboration.service.ProjectGroupService;
 import com.yan233.courseplatform.common.api.Result;
-import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.dto.UserBrief;
 import com.yan233.courseplatform.common.web.UserContext;
@@ -102,7 +101,7 @@ public class ProjectController {
         CurrentUser current = UserContext.from(servletRequest);
         ProjectGroup group = accessService.requireGroup(id);
         accessService.requireCanViewCourse(group.getCourseId(), current);
-        AccessControl.requireRole(current, "ADMIN", "STUDENT");
+        accessService.requireCanJoinGroup(group.getCourseId(), current);
         if (!current.isAdmin()) {
             request.setUserId(current.userId());
         }
@@ -114,7 +113,7 @@ public class ProjectController {
         CurrentUser current = UserContext.from(servletRequest);
         ProjectGroup group = accessService.requireGroup(id);
         accessService.requireCanViewCourse(group.getCourseId(), current);
-        AccessControl.requireRole(current, "ADMIN", "STUDENT");
+        accessService.requireCanJoinGroup(group.getCourseId(), current);
         groupService.leave(id, current.userId());
         return Result.ok();
     }
