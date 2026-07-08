@@ -13,9 +13,13 @@
         </div>
       </div>
       <div class="dashboard-course-summary">
-        <span>当前课程</span>
-        <strong>{{ currentCourseLabel }}</strong>
-        <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
+        <Transition name="course-fade" mode="out-in">
+          <div :key="currentCourseId" class="dashboard-course-summary-inner">
+            <span>当前课程</span>
+            <strong>{{ currentCourseLabel }}</strong>
+            <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
+          </div>
+        </Transition>
         <el-select v-model="currentCourseModel" filterable placeholder="选择课程">
           <el-option
             v-for="course in appState.courses.records"
@@ -27,16 +31,18 @@
       </div>
     </section>
 
-    <div class="metric-grid">
-      <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
-        <span class="metric-icon">
-          <el-icon><component :is="metric.icon" /></el-icon>
-        </span>
-        <span class="metric-label">{{ metric.label }}</span>
-        <strong>{{ metric.value }}</strong>
-        <small>{{ metric.caption }}</small>
-      </article>
-    </div>
+    <Transition name="course-fade" mode="out-in">
+      <div :key="`metrics-${currentCourseId}`" class="metric-grid">
+        <article v-for="metric in metrics" :key="metric.label" class="metric-card" :class="metric.tone">
+          <span class="metric-icon">
+            <el-icon><component :is="metric.icon" /></el-icon>
+          </span>
+          <span class="metric-label">{{ metric.label }}</span>
+          <strong>{{ metric.value }}</strong>
+          <small>{{ metric.caption }}</small>
+        </article>
+      </div>
+    </Transition>
 
     <div class="dashboard-grid">
       <section class="panel">
@@ -66,20 +72,22 @@
           </div>
           <strong>{{ roleLabel(displayCourseAccess?.courseRole || currentRole) }}</strong>
         </div>
-        <div class="status-list">
-          <div>
-            <span>系统身份</span>
-            <strong>{{ roleLabel(currentRole) }}</strong>
+        <Transition name="course-fade" mode="out-in">
+          <div :key="`status-${currentCourseId}-${displayCourseAccess?.courseRole || 'none'}`" class="status-list">
+            <div>
+              <span>系统身份</span>
+              <strong>{{ roleLabel(currentRole) }}</strong>
+            </div>
+            <div>
+              <span>课程身份</span>
+              <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
+            </div>
+            <div>
+              <span>课程容量</span>
+              <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
+            </div>
           </div>
-          <div>
-            <span>课程身份</span>
-            <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
-          </div>
-          <div>
-            <span>课程容量</span>
-            <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
-          </div>
-        </div>
+        </Transition>
         <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
         <div class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
           <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
@@ -110,20 +118,22 @@
           <h2>当前课程</h2>
         </div>
       </div>
-      <dl class="course-summary">
-        <div>
-          <dt>课程编号</dt>
-          <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
-        </div>
-        <div>
-          <dt>任课教师</dt>
-          <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
-        </div>
-        <div>
-          <dt>课程说明</dt>
-          <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
-        </div>
-      </dl>
+      <Transition name="course-fade" mode="out-in">
+        <dl :key="`summary-${currentCourseId}`" class="course-summary">
+          <div>
+            <dt>课程编号</dt>
+            <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
+          </div>
+          <div>
+            <dt>任课教师</dt>
+            <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
+          </div>
+          <div>
+            <dt>课程说明</dt>
+            <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
+          </div>
+        </dl>
+      </Transition>
     </section>
   </section>
 </template>

@@ -50,7 +50,12 @@
           </div>
         </div>
         <div class="topbar-actions">
-          <div v-if="showCourseContext" class="course-context" @click.capture="handleCourseContextClick">
+          <div
+            v-if="showCourseContext"
+            class="course-context"
+            :class="{ 'is-switching': courseSwitching }"
+            @click.capture="handleCourseContextClick"
+          >
             <span class="course-context-label">当前课程</span>
             <el-select
               ref="courseSelectRef"
@@ -77,7 +82,7 @@
         </div>
       </el-header>
 
-      <el-main class="workspace">
+      <el-main class="workspace" :class="{ 'is-course-switching': courseSwitching }">
         <RouterView />
       </el-main>
     </el-container>
@@ -94,6 +99,7 @@ const route = useRoute()
 const router = useRouter()
 const courseSelectRef = ref<{ blur: () => void; toggleMenu: (event?: Event) => void } | null>(null)
 const courseSelectOpen = ref(false)
+const courseSwitching = ref(false)
 
 const pageTitle = computed(() => {
   if (route.path === '/dashboard' || route.path === '/profile') {
@@ -108,7 +114,7 @@ const showCourseContext = computed(() => Boolean(route.meta.courseScoped))
 const currentCourseModel = computed({
   get: () => currentCourseId.value,
   set: (value: number) => {
-    void setCurrentCourse(value).then(triggerRefresh)
+    void switchCourse(value)
   }
 })
 const courseRoleText = computed(() => {
@@ -133,6 +139,19 @@ function menuIcon(path: string) {
 function handleLogout() {
   logout()
   router.replace('/login')
+}
+
+async function switchCourse(value: number) {
+  if (value === currentCourseId.value) return
+  courseSwitching.value = true
+  try {
+    await setCurrentCourse(value)
+    triggerRefresh()
+  } finally {
+    window.setTimeout(() => {
+      courseSwitching.value = false
+    }, 180)
+  }
 }
 
 function handleCourseContextClick(event: MouseEvent) {
