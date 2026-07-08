@@ -35,7 +35,7 @@
       <aside class="dz-list">
         <div class="dz-list-head">话题 · {{ topicList.length }}</div>
         <div ref="listBody" class="dz-list-body">
-          <div class="dz-list-indicator" :style="indicatorStyle"></div>
+          <div class="dz-list-indicator" :class="{ moving: indicatorSettled }" :style="indicatorStyle"></div>
           <button
             v-for="topic in topicList"
             :key="topic.id"
@@ -53,35 +53,33 @@
 
       <!-- 右：选中帖子的内容 -->
       <section class="dz-read">
-        <Transition name="dz-show" mode="out-in">
-          <div v-if="!activeTopic" key="empty" class="dz-read-empty">选择左侧话题查看内容</div>
-          <div v-else :key="activeTopic.id" class="dz-read-inner">
-            <header class="dz-read-head">
-              <h3>{{ activeTopic.title }}</h3>
-              <span>{{ authorName(activeTopic) }}</span>
-            </header>
-            <div class="dz-read-body">
-              <article class="dz-post">
-                <p>{{ activeTopic.content }}</p>
-              </article>
-              <div class="dz-replies-head">楼层回复 · {{ repliesOf(activeTopic.id).length }}</div>
-              <div class="dz-replies">
-                <div v-for="(reply, i) in repliesOf(activeTopic.id)" :key="reply.id" class="dz-floor">
-                  <div class="dz-floor-no">{{ i + 1 }}</div>
-                  <div class="dz-floor-body">
-                    <div class="dz-floor-meta">{{ authorName(reply) }}</div>
-                    <p>{{ reply.content }}</p>
-                  </div>
+        <div v-if="!activeTopic" class="dz-read-empty">选择左侧话题查看内容</div>
+        <div v-else class="dz-read-inner">
+          <header class="dz-read-head">
+            <h3>{{ activeTopic.title }}</h3>
+            <span>{{ authorName(activeTopic) }}</span>
+          </header>
+          <div class="dz-read-body">
+            <article class="dz-post">
+              <p>{{ activeTopic.content }}</p>
+            </article>
+            <div class="dz-replies-head">楼层回复 · {{ repliesOf(activeTopic.id).length }}</div>
+            <div class="dz-replies">
+              <div v-for="(reply, i) in repliesOf(activeTopic.id)" :key="reply.id" class="dz-floor">
+                <div class="dz-floor-no">{{ i + 1 }}</div>
+                <div class="dz-floor-body">
+                  <div class="dz-floor-meta">{{ authorName(reply) }}</div>
+                  <p>{{ reply.content }}</p>
                 </div>
-                <div v-if="!repliesOf(activeTopic.id).length" class="dz-empty">还没有回复，来说点什么</div>
               </div>
+              <div v-if="!repliesOf(activeTopic.id).length" class="dz-empty">还没有回复，来说点什么</div>
             </div>
-            <footer v-if="can('CREATE_DISCUSSION')" class="dz-reply">
-              <el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复该话题…" />
-              <el-button type="primary" :disabled="!replyContent.trim()" @click="submitReply">回复</el-button>
-            </footer>
           </div>
-        </Transition>
+          <footer v-if="can('CREATE_DISCUSSION')" class="dz-reply">
+            <el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复该话题…" />
+            <el-button type="primary" :disabled="!replyContent.trim()" @click="submitReply">回复</el-button>
+          </footer>
+        </div>
       </section>
     </div>
 
@@ -127,25 +125,37 @@ const canCreateTopic = computed(() => Boolean(topicForm.title.trim() && topicFor
 // 左侧选中高亮：跟随选中项位置滑动
 const listBody = ref<HTMLElement>()
 const indicatorStyle = ref<Record<string, string>>({ opacity: '0' })
+const indicatorSettled = ref(false)
 
 function moveIndicator() {
   const body = listBody.value
   const id = selectedTopicId.value
   if (!body || !id) {
     indicatorStyle.value = { opacity: '0' }
+    indicatorSettled.value = false
     return
   }
   const el = body.querySelector<HTMLElement>(`[data-topic-id="${id}"]`)
   if (!el) {
     indicatorStyle.value = { opacity: '0' }
+    indicatorSettled.value = false
     return
   }
+  const wasSettled = indicatorSettled.value
   indicatorStyle.value = {
     opacity: '1',
     transform: `translateY(${el.offsetTop}px)`,
     left: `${el.offsetLeft}px`,
     width: `${el.offsetWidth}px`,
     height: `${el.offsetHeight}px`
+  }
+  if (!wasSettled) {
+    const settledTopicId = id
+    requestAnimationFrame(() => {
+      if (selectedTopicId.value === settledTopicId) {
+        indicatorSettled.value = true
+      }
+    })
   }
 }
 
@@ -296,9 +306,13 @@ watch([currentCourseId, refreshSignal], () => {
   position: absolute;
   top: 0;
   border-radius: 10px;
-  background: #e8eef9;
+  background: rgb(var(--app-brand-rgb) / 8%);
+  box-shadow: inset 0 0 0 1px rgb(var(--app-brand-rgb) / 16%);
   z-index: 0;
   pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+.dz-list-indicator.moving {
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     left 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
@@ -324,6 +338,13 @@ watch([currentCourseId, refreshSignal], () => {
 }
 .dz-list-item.active {
   background: transparent;
+}
+.dz-list-item.active .dz-list-title {
+  color: var(--app-brand-deep);
+  font-weight: 650;
+}
+.dz-list-item.active .dz-list-meta {
+  color: var(--app-muted);
 }
 .dz-list-title {
   font-size: 13px;
@@ -439,17 +460,4 @@ watch([currentCourseId, refreshSignal], () => {
   flex: 1;
 }
 
-/* 选中话题时右侧内容滑入（复用之前的 scale+fade 过渡） */
-.dz-show-enter-active,
-.dz-show-leave-active {
-  transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.dz-show-enter-from {
-  opacity: 0;
-  transform: translateX(24px) scale(0.985);
-}
-.dz-show-leave-to {
-  opacity: 0;
-  transform: translateX(-12px) scale(0.985);
-}
 </style>
