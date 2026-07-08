@@ -151,6 +151,9 @@ export const courseService = {
   updateAssignment(id: number, payload: Record<string, unknown>) {
     return unwrap<Assignment>(http.put(`/assignments/${id}`, payload))
   },
+  deleteAssignment(id: number) {
+    return unwrap<void>(http.delete(`/assignments/${id}`))
+  },
   getSubmissions(assignmentId: number) {
     return unwrap<Submission[]>(http.get('/submissions', { params: { assignmentId } }))
   },

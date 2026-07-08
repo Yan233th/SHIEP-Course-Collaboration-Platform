@@ -21,6 +21,7 @@ import com.yan233.courseplatform.course.service.CourseBizService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -82,6 +83,17 @@ public class AssignmentController {
         assignment.setId(id);
         assignmentMapper.updateById(assignment);
         return Result.ok(toAssignmentViews(List.of(assignment)).get(0));
+    }
+
+    @DeleteMapping("/assignments/{id}")
+    public Result<Void> deleteAssignment(@PathVariable Long id, HttpServletRequest servletRequest) {
+        Assignment assignment = assignmentMapper.selectById(id);
+        if (assignment != null) {
+            courseService.requireCourseStaff(assignment.getCourseId(), UserContext.from(servletRequest));
+            submissionMapper.delete(new LambdaQueryWrapper<Submission>().eq(Submission::getAssignmentId, id));
+        }
+        assignmentMapper.deleteById(id);
+        return Result.ok();
     }
 
     @PostMapping("/submissions")

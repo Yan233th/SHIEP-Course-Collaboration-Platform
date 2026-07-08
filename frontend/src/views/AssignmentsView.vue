@@ -34,10 +34,21 @@
             </template>
           </el-table-column>
           <el-table-column prop="totalScore" label="总分" width="78" />
-          <el-table-column label="操作" width="180" fixed="right">
+          <el-table-column label="操作" width="230" fixed="right">
             <template #default="{ row }">
               <el-button size="small" text @click.stop="selectAssignment(row.id)">查看</el-button>
               <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click.stop="openEditAssignmentDrawer(row)">编辑</el-button>
+              <el-button
+                v-if="canManageAssignment"
+                size="small"
+                text
+                type="danger"
+                :icon="Delete"
+                :loading="assignmentDeletingId === row.id"
+                @click.stop="deleteAssignment(row)"
+              >
+                删除
+              </el-button>
               <el-button v-if="canSubmitAssignment" size="small" type="primary" @click.stop="openSubmissionDrawer(row.id)">提交</el-button>
             </template>
           </el-table-column>
@@ -55,6 +66,17 @@
               </div>
               <div class="assignment-detail-actions">
                 <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click="openEditAssignmentDrawer(selectedAssignment)">编辑</el-button>
+                <el-button
+                  v-if="canManageAssignment"
+                  size="small"
+                  text
+                  type="danger"
+                  :icon="Delete"
+                  :loading="assignmentDeletingId === selectedAssignment.id"
+                  @click="deleteAssignment(selectedAssignment)"
+                >
+                  删除
+                </el-button>
                 <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
               </div>
             </div>
@@ -210,8 +232,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ElMessage, type UploadFile, type UploadUserFile } from 'element-plus'
-import { Check, Edit, Plus, Upload } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, type UploadFile, type UploadUserFile } from 'element-plus'
+import { Check, Delete, Edit, Plus, Upload } from '@element-plus/icons-vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { courseService, fileService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
@@ -230,6 +252,7 @@ const loading = ref(false)
 const assignmentSaving = ref(false)
 const submissionSaving = ref(false)
 const gradeSaving = ref(false)
+const assignmentDeletingId = ref<number | undefined>(undefined)
 const assignmentFile = ref<File | null>(null)
 const assignmentFileList = ref<UploadUserFile[]>([])
 const submissionFile = ref<File | null>(null)
@@ -437,6 +460,23 @@ async function saveAssignment() {
     await selectAssignment(saved.id)
   } finally {
     assignmentSaving.value = false
+  }
+}
+
+async function deleteAssignment(assignment: Assignment) {
+  await ElMessageBox.confirm(`确认删除作业「${assignment.title}」？该作业下的提交记录也会一并隐藏。`, '删除作业', { type: 'warning' })
+  assignmentDeletingId.value = assignment.id
+  try {
+    await courseService.deleteAssignment(assignment.id)
+    ElMessage.success('作业已删除')
+    if (selectedAssignmentId.value === assignment.id) {
+      selectedAssignmentId.value = undefined
+      selectedSubmission.value = null
+      submissions.value = []
+    }
+    await loadAssignments()
+  } finally {
+    assignmentDeletingId.value = undefined
   }
 }
 
