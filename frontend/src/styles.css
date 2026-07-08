@@ -758,7 +758,6 @@ a {
 }
 
 .status-panel {
-  align-self: start;
   display: flex;
   flex-direction: column;
 }
@@ -787,11 +786,6 @@ a {
   border: 1px solid var(--app-border);
   border-radius: 8px;
   background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-soft) 100%);
-}
-
-.status-role-pill.is-course-role {
-  border-color: rgb(var(--app-brand-rgb) / 24%);
-  background: rgb(var(--app-brand-rgb) / 6%);
 }
 
 .status-role-pill span,
@@ -845,8 +839,15 @@ a {
 
 .permission-summary {
   min-width: 0;
+  flex: 1 1 auto;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
+  min-height: 112px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
 }
 
 .permission-summary-heading small {
@@ -862,12 +863,12 @@ a {
 
 .capability-tags {
   position: relative;
-  min-height: 60px;
+  min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 8px;
-  padding-top: 4px;
+  padding-top: 0;
   align-content: flex-start;
   transition: opacity 0.18s ease;
 }

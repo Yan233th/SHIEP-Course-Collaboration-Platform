@@ -77,7 +77,7 @@
               <span>系统身份</span>
               <strong>{{ roleLabel(currentRole) }}</strong>
             </div>
-            <div class="status-role-pill is-course-role">
+            <div class="status-role-pill">
               <span>课程身份</span>
               <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
             </div>
