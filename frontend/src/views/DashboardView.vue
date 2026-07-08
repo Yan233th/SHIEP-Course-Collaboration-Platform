@@ -13,13 +13,15 @@
         </div>
       </div>
       <div class="dashboard-course-summary">
-        <Transition name="course-fade">
-          <div :key="currentCourseId" class="dashboard-course-summary-inner">
-            <span>当前课程</span>
-            <strong>{{ currentCourseLabel }}</strong>
-            <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
-          </div>
-        </Transition>
+        <div class="course-swap">
+          <Transition name="course-swap">
+            <div :key="currentCourseId" class="dashboard-course-summary-inner">
+              <span>当前课程</span>
+              <strong>{{ currentCourseLabel }}</strong>
+              <small>任课教师：{{ selectedCourse?.teacherName || '-' }}</small>
+            </div>
+          </Transition>
+        </div>
         <el-select v-model="currentCourseModel" filterable placeholder="选择课程">
           <el-option
             v-for="course in appState.courses.records"
@@ -70,22 +72,24 @@
           </div>
           <strong>{{ roleLabel(displayCourseAccess?.courseRole || currentRole) }}</strong>
         </div>
-        <Transition name="course-fade">
-          <div :key="`status-${currentCourseId}-${displayCourseAccess?.courseRole || 'none'}`" class="status-list">
-            <div>
-              <span>系统身份</span>
-              <strong>{{ roleLabel(currentRole) }}</strong>
+        <div class="course-swap">
+          <Transition name="course-swap">
+            <div :key="`status-${currentCourseId}-${displayCourseAccess?.courseRole || 'none'}`" class="status-list">
+              <div>
+                <span>系统身份</span>
+                <strong>{{ roleLabel(currentRole) }}</strong>
+              </div>
+              <div>
+                <span>课程身份</span>
+                <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
+              </div>
+              <div>
+                <span>课程容量</span>
+                <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
+              </div>
             </div>
-            <div>
-              <span>课程身份</span>
-              <strong>{{ roleLabel(displayCourseAccess?.courseRole) }}</strong>
-            </div>
-            <div>
-              <span>课程容量</span>
-              <strong>{{ selectedCourse?.currentStudents ?? 0 }} / {{ selectedCourse?.maxStudents ?? '-' }}</strong>
-            </div>
-          </div>
-        </Transition>
+          </Transition>
+        </div>
         <el-progress class="capacity-progress" :percentage="capacityPercent" :show-text="false" />
         <TransitionGroup name="permission-chip" tag="div" class="capability-tags" :class="{ 'is-refreshing': appState.courseAccessLoading }">
           <el-tag v-for="action in visibleActions" :key="action" effect="plain">{{ action }}</el-tag>
@@ -116,22 +120,24 @@
           <h2>当前课程</h2>
         </div>
       </div>
-      <Transition name="course-fade">
-        <dl :key="`summary-${currentCourseId}`" class="course-summary">
-          <div>
-            <dt>课程编号</dt>
-            <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
-          </div>
-          <div>
-            <dt>任课教师</dt>
-            <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
-          </div>
-          <div>
-            <dt>课程说明</dt>
-            <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
-          </div>
-        </dl>
-      </Transition>
+      <div class="course-swap">
+        <Transition name="course-swap">
+          <dl :key="`summary-${currentCourseId}`" class="course-summary">
+            <div>
+              <dt>课程编号</dt>
+              <dd>{{ selectedCourse?.courseCode || '-' }}</dd>
+            </div>
+            <div>
+              <dt>任课教师</dt>
+              <dd>{{ selectedCourse?.teacherName || '-' }}</dd>
+            </div>
+            <div>
+              <dt>课程说明</dt>
+              <dd>{{ selectedCourse?.description || '暂无说明' }}</dd>
+            </div>
+          </dl>
+        </Transition>
+      </div>
     </section>
   </section>
 </template>
