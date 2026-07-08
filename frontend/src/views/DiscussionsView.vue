@@ -392,11 +392,13 @@ watch([currentCourseId, refreshSignal], () => {
 .dz-read-body {
   flex: 1;
   overflow: auto;
-  padding: 14px 18px;
+  padding: 16px 18px;
 }
 .dz-post {
-  padding: 4px 0 14px;
-  border-bottom: 1px dashed #eef0f4;
+  padding: 14px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
 }
 .dz-post p {
   margin: 0;
@@ -404,18 +406,35 @@ watch([currentCourseId, refreshSignal], () => {
   line-height: 1.7;
 }
 .dz-replies-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 12px;
-  color: #6b7280;
-  margin: 14px 0 10px;
+  font-weight: 700;
+  color: var(--app-muted);
+  margin: 18px 0 10px;
+}
+.dz-replies-head::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--app-divider);
 }
 .dz-replies {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  overflow: hidden;
 }
 .dz-floor {
   display: flex;
   gap: 10px;
+  padding: 12px 14px;
+}
+.dz-floor + .dz-floor {
+  border-top: 1px solid var(--app-divider);
 }
 .dz-floor-no {
   width: 24px;
