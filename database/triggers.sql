@@ -24,7 +24,7 @@ CREATE TRIGGER trg_submission_grade_history
 AFTER UPDATE ON assignment_submission
 FOR EACH ROW
 BEGIN
-  IF OLD.score IS NULL OR OLD.score <> NEW.score OR OLD.feedback <> NEW.feedback THEN
+  IF NOT (OLD.score <=> NEW.score) OR NOT (OLD.feedback <=> NEW.feedback) THEN
     INSERT INTO audit_history(table_name, record_id, action_type, snapshot)
     VALUES (
       'assignment_submission',

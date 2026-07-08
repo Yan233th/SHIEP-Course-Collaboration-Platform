@@ -111,9 +111,9 @@ CREATE TABLE file_reference (
   CONSTRAINT fk_file_reference_file FOREIGN KEY (file_id) REFERENCES file_metadata(id),
   CONSTRAINT ck_file_reference_owner CHECK (owner_type IN ('COURSE_RESOURCE','ASSIGNMENT','SUBMISSION','SHOWCASE')),
   CONSTRAINT ck_file_reference_status CHECK (status IN (0,1)),
-  CONSTRAINT uk_file_reference UNIQUE (owner_type, owner_id, file_id, deleted),
   INDEX idx_file_reference_file (file_id, deleted, status),
-  INDEX idx_file_reference_owner (owner_type, owner_id, deleted)
+  INDEX idx_file_reference_owner (owner_type, owner_id, deleted),
+  INDEX idx_file_reference_lookup (owner_type, owner_id, file_id, deleted)
 ) COMMENT='文件业务引用';
 
 CREATE TABLE file_gc_queue (
