@@ -35,7 +35,7 @@
                 <span class="audit-time">{{ formatDateTime(row.create_time) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="table_name" label="表" width="98" show-overflow-tooltip>
+            <el-table-column prop="table_name" label="表" width="126">
               <template #default="{ row }">{{ tableLabel(row.table_name) }}</template>
             </el-table-column>
             <el-table-column prop="action_type" label="动作" width="88">
@@ -46,7 +46,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="record_id" label="ID" width="76" />
-            <el-table-column label="快照" min-width="180">
+            <el-table-column label="快照" width="760">
               <template #default="{ row }">
                 <code class="snapshot-text">{{ snapshotText(row.snapshot) }}</code>
               </template>
@@ -65,13 +65,15 @@
             </article>
           </div>
           <el-table :data="fileStatuses" height="100%" empty-text="暂无文件状态">
-            <el-table-column prop="original_name" label="文件名(首次)" min-width="200" show-overflow-tooltip />
-            <el-table-column label="Hash" width="104">
+            <el-table-column prop="original_name" label="文件名(首次)" width="360" />
+            <el-table-column label="SHA-256" width="188">
               <template #default="{ row }">
-                <code class="hash-text">{{ shortHash(row.content_hash) }}</code>
+                <el-tooltip :content="row.content_hash || '-'" placement="top" :disabled="!row.content_hash">
+                  <code class="hash-text">{{ shortHash(row.content_hash) }}</code>
+                </el-tooltip>
               </template>
             </el-table-column>
-            <el-table-column prop="biz_type" label="类型" width="176" show-overflow-tooltip>
+            <el-table-column prop="biz_type" label="类型" width="260">
               <template #default="{ row }">{{ bizTypeLabel(row.biz_type) }}</template>
             </el-table-column>
             <el-table-column label="状态" width="106">
@@ -224,7 +226,7 @@ function bizTypeLabel(type?: string) {
 }
 
 function shortHash(hash?: string | null) {
-  return hash ? hash.slice(0, 10) : '-'
+  return hash ? `${hash.slice(0, 16)}...` : '-'
 }
 
 function lifecycleTagType(status: string) {
@@ -408,6 +410,17 @@ onMounted(loadAll)
   max-width: 100%;
 }
 
+.audit-pane :deep(.el-table__body),
+.audit-pane :deep(.el-table__header) {
+  min-width: max-content;
+}
+
+.audit-pane :deep(.el-table .cell) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
 .audit-pane :deep(.el-table__inner-wrapper),
 .audit-pane :deep(.el-table__body-wrapper),
 .audit-pane :deep(.el-scrollbar),
@@ -416,13 +429,13 @@ onMounted(loadAll)
 }
 
 .snapshot-text {
-  display: block;
-  overflow: hidden;
+  display: inline-block;
+  overflow: visible;
   color: var(--app-text-soft);
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;
   line-height: 1.6;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 

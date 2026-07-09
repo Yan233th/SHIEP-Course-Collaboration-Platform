@@ -119,7 +119,7 @@ public class FileController {
 
     @PostMapping("/internal/gc/run")
     public Result<Integer> runGc() {
-        return Result.ok(lifecycleService.processPendingGc());
+        return Result.ok(lifecycleService.processPendingGcNow());
     }
 
     @GetMapping("/internal/gc-stats")

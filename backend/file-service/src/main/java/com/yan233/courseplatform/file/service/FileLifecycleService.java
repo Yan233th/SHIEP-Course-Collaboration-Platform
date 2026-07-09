@@ -18,6 +18,8 @@ public interface FileLifecycleService {
 
     int processPendingGc();
 
+    int processPendingGcNow();
+
     List<Map<String, Object>> gcStats();
 
     List<Map<String, Object>> fileStatuses();

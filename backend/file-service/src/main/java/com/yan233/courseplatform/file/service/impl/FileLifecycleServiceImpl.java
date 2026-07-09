@@ -123,11 +123,23 @@ public class FileLifecycleServiceImpl implements FileLifecycleService {
     @Override
     @Transactional
     public int processPendingGc() {
+        return processPendingGc(false);
+    }
+
+    @Override
+    @Transactional
+    public int processPendingGcNow() {
+        return processPendingGc(true);
+    }
+
+    private int processPendingGc(boolean forceReady) {
         if (!gcEnabled) {
             return 0;
         }
         gcQueueMapper.enqueueOrphans(orphanAgeMinutes);
-        List<FileGcQueue> queues = gcQueueMapper.selectRunnable(batchSize, maxAttempts);
+        List<FileGcQueue> queues = forceReady
+                ? gcQueueMapper.selectRunnableNow(batchSize, maxAttempts)
+                : gcQueueMapper.selectRunnable(batchSize, maxAttempts);
         int processed = 0;
         for (FileGcQueue queue : queues) {
             if (gcQueueMapper.markProcessing(queue.getId()) == 0) {

@@ -25,6 +25,17 @@ public interface FileGcQueueMapper extends BaseMapper<FileGcQueue> {
             """)
     List<FileGcQueue> selectRunnable(@Param("limit") int limit, @Param("maxAttempts") int maxAttempts);
 
+    @Select("""
+            SELECT *
+            FROM file_gc_queue
+            WHERE deleted = 0
+              AND status IN (0, 4)
+              AND attempts < #{maxAttempts}
+            ORDER BY create_time ASC
+            LIMIT #{limit}
+            """)
+    List<FileGcQueue> selectRunnableNow(@Param("limit") int limit, @Param("maxAttempts") int maxAttempts);
+
     @Update("""
             UPDATE file_gc_queue
             SET status = 1,
