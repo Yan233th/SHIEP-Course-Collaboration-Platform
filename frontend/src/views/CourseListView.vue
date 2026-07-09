@@ -22,7 +22,6 @@
     <el-table
       class="course-table"
       :data="courses.records"
-      :row-class-name="courseRowClassName"
       @row-click="selectCourse"
       @selection-change="selection = $event"
       height="calc(100vh - 270px)"
@@ -35,11 +34,6 @@
       <el-table-column prop="credit" label="学分" width="80" />
       <el-table-column prop="hours" label="学时" width="80" />
       <el-table-column prop="currentStudents" label="人数" width="90" />
-      <el-table-column label="当前课程" width="92">
-        <template #default="{ row }">
-          <el-tag v-if="row.id === currentCourseId" type="success">当前</el-tag>
-        </template>
-      </el-table-column>
       <el-table-column v-if="canMaintainCourses" label="操作" width="90" fixed="right">
         <template #default="{ row }">
           <el-button v-if="canEditCourse(row)" size="small" @click.stop="openEditDialog(row)">编辑</el-button>
@@ -134,10 +128,6 @@ function selectCourse(course: Course) {
   if (course.id === currentCourseId.value) return
   void setCurrentCourse(course.id)
   ElMessage.success(`当前课程：${course.courseName}`)
-}
-
-function courseRowClassName({ row }: { row: Course }) {
-  return row.id === currentCourseId.value ? 'course-row-current' : ''
 }
 
 function canEditCourse(course: Course) {
