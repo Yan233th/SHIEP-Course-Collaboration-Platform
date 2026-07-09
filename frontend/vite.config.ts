@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 declare const process: { env: { VITE_API_PROXY?: string } }
 
-const apiProxy = process.env.VITE_API_PROXY || 'http://localhost:8080'
+const apiProxy = process.env.VITE_API_PROXY || 'http://localhost:42180'
 
 export default defineConfig({
   plugins: [vue()],
