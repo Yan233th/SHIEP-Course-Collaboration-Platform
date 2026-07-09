@@ -73,7 +73,7 @@ FOR EACH ROW
 BEGIN
   IF OLD.deleted = 0 AND NEW.deleted = 1 THEN
     INSERT INTO file_gc_queue(file_id, source_reference_id, reason, status, next_retry_time)
-    VALUES (OLD.file_id, OLD.id, 'REFERENCE_RELEASED', 0, NOW());
+    VALUES (OLD.file_id, OLD.id, 'REFERENCE_RELEASED', 0, TIMESTAMPADD(MINUTE, 10, NOW()));
 
     INSERT INTO audit_history(table_name, record_id, action_type, snapshot)
     VALUES (

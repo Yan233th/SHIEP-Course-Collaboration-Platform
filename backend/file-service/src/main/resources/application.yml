@@ -42,4 +42,5 @@ management:
 app:
   file:
     storage-dir: ${FILE_STORAGE_DIR:uploads}
-
+    gc:
+      fixed-delay-ms: ${FILE_GC_FIXED_DELAY_MS:60000}
