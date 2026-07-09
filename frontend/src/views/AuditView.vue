@@ -30,21 +30,21 @@
       <el-tab-pane label="操作历史" name="history">
         <div class="audit-pane audit-pane-history">
           <el-table :data="auditHistory" height="456" empty-text="暂无审计记录">
-            <el-table-column prop="create_time" label="时间" width="150">
+            <el-table-column prop="create_time" label="时间" width="140">
               <template #default="{ row }">{{ formatDateTime(row.create_time) }}</template>
             </el-table-column>
-            <el-table-column prop="table_name" label="表" width="180">
+            <el-table-column prop="table_name" label="表" min-width="120" show-overflow-tooltip>
               <template #default="{ row }">{{ tableLabel(row.table_name) }}</template>
             </el-table-column>
-            <el-table-column prop="action_type" label="动作" width="110">
+            <el-table-column prop="action_type" label="动作" width="88">
               <template #default="{ row }">
                 <el-tag size="small" effect="plain" :type="actionTagType(row.action_type)">
                   {{ actionLabel(row.action_type) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="record_id" label="记录 ID" width="100" />
-            <el-table-column label="快照" min-width="300">
+            <el-table-column prop="record_id" label="ID" width="76" />
+            <el-table-column label="快照" min-width="180">
               <template #default="{ row }">
                 <code class="snapshot-text">{{ snapshotText(row.snapshot) }}</code>
               </template>
@@ -63,18 +63,18 @@
             </article>
           </div>
           <el-table :data="fileStatuses" height="360" empty-text="暂无文件状态">
-            <el-table-column prop="original_name" label="文件" min-width="220" />
-            <el-table-column prop="biz_type" label="类型" width="120" />
-            <el-table-column label="状态" width="130">
+            <el-table-column prop="original_name" label="文件" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="biz_type" label="类型" width="90" show-overflow-tooltip />
+            <el-table-column label="状态" width="106">
               <template #default="{ row }">
                 <el-tag size="small" effect="plain" :type="lifecycleTagType(row.lifecycle_status)">
                   {{ lifecycleLabel(row.lifecycle_status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="active_reference_count" label="有效引用" width="100" />
-            <el-table-column prop="pending_gc_count" label="待回收" width="100" />
-            <el-table-column label="大小" width="110">
+            <el-table-column prop="active_reference_count" label="引用" width="76" />
+            <el-table-column prop="pending_gc_count" label="待收" width="76" />
+            <el-table-column label="大小" width="92">
               <template #default="{ row }">{{ formatBytes(Number(row.size_bytes || 0)) }}</template>
             </el-table-column>
           </el-table>
@@ -219,14 +219,19 @@ onMounted(loadAll)
 
 <style scoped>
 .audit-console {
+  min-width: 0;
+  max-width: 100%;
   display: grid;
   gap: 14px;
+  overflow: hidden;
   background:
     linear-gradient(180deg, rgb(16 22 26 / 4%), transparent 160px),
     var(--app-surface);
 }
 
 .audit-console-head {
+  min-width: 0;
+  max-width: 100%;
   min-height: 78px;
   display: flex;
   align-items: center;
@@ -271,11 +276,14 @@ onMounted(loadAll)
   flex: 0 0 auto;
   color: var(--app-on-dark-strong);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .audit-toolbar {
-  display: grid;
-  grid-template-columns: 142px 122px 104px 124px max-content max-content;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   padding: 6px 8px;
@@ -286,7 +294,10 @@ onMounted(loadAll)
 
 .audit-toolbar :deep(.el-select),
 .audit-toolbar :deep(.el-input) {
-  width: 100%;
+  flex: 1 1 122px;
+  width: auto;
+  min-width: 104px;
+  max-width: 180px;
 }
 
 .audit-toolbar :deep(.el-select__wrapper),
@@ -296,13 +307,29 @@ onMounted(loadAll)
   height: 32px;
 }
 
+.audit-toolbar :deep(.el-button) {
+  flex: 0 0 auto;
+}
+
 .audit-tabs {
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.audit-tabs :deep(.el-tabs__content),
+.audit-tabs :deep(.el-tab-pane) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .audit-pane {
   height: 456px;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
 }
 
@@ -314,6 +341,8 @@ onMounted(loadAll)
 
 .audit-pane-files .file-gc-summary {
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   gap: 8px;
   margin: 0;
@@ -323,8 +352,21 @@ onMounted(loadAll)
 
 .audit-pane-files .gc-chip {
   flex: 1 0 126px;
+  min-width: 0;
   min-height: 0;
   padding: 10px 12px;
+}
+
+.audit-pane :deep(.el-table) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.audit-pane :deep(.el-table__inner-wrapper),
+.audit-pane :deep(.el-table__body-wrapper),
+.audit-pane :deep(.el-scrollbar),
+.audit-pane :deep(.el-scrollbar__wrap) {
+  max-width: 100%;
 }
 
 .snapshot-text {
@@ -340,7 +382,33 @@ onMounted(loadAll)
 
 @media (max-width: 1180px) {
   .audit-toolbar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .audit-toolbar :deep(.el-select),
+  .audit-toolbar :deep(.el-input) {
+    flex: 1 1 calc(50% - 8px);
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .audit-console-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .audit-toolbar :deep(.el-button) {
+    flex: 1 1 calc(50% - 8px);
+  }
+}
+
+@media (max-width: 520px) {
+  .audit-toolbar :deep(.el-select),
+  .audit-toolbar :deep(.el-input),
+  .audit-toolbar :deep(.el-button) {
+    flex-basis: 100%;
   }
 }
 </style>
