@@ -29,7 +29,7 @@
     <el-tabs v-model="activeTab" class="audit-tabs">
       <el-tab-pane label="操作历史" name="history">
         <div class="audit-pane audit-pane-history">
-          <el-table :data="auditHistory" height="456" empty-text="暂无审计记录">
+          <el-table :data="auditHistory" height="100%" empty-text="暂无审计记录">
             <el-table-column prop="create_time" label="时间" width="140">
               <template #default="{ row }">{{ formatDateTime(row.create_time) }}</template>
             </el-table-column>
@@ -62,7 +62,7 @@
               <small>{{ formatBytes(Number(item.total_size_bytes || 0)) }}</small>
             </article>
           </div>
-          <el-table :data="fileStatuses" height="360" empty-text="暂无文件状态">
+          <el-table :data="fileStatuses" height="100%" empty-text="暂无文件状态">
             <el-table-column prop="original_name" label="文件" min-width="180" show-overflow-tooltip />
             <el-table-column prop="biz_type" label="类型" width="90" show-overflow-tooltip />
             <el-table-column label="状态" width="106">
@@ -221,10 +221,11 @@ onMounted(loadAll)
 .audit-console {
   min-width: 0;
   max-width: 100%;
+  height: 100%;
   display: grid;
-  grid-template-rows: auto auto auto;
-  align-content: start;
-  align-items: start;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: stretch;
+  align-items: stretch;
   gap: 14px;
   overflow: hidden;
   background:
@@ -315,21 +316,31 @@ onMounted(loadAll)
 }
 
 .audit-tabs {
+  height: 100%;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+}
+
+.audit-tabs :deep(.el-tabs__header) {
+  min-width: 0;
+  margin-bottom: 12px;
 }
 
 .audit-tabs :deep(.el-tabs__content),
 .audit-tabs :deep(.el-tab-pane) {
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   max-width: 100%;
   overflow: hidden;
 }
 
 .audit-pane {
-  height: 456px;
+  height: 100%;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
