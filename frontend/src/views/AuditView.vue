@@ -222,6 +222,9 @@ onMounted(loadAll)
   min-width: 0;
   max-width: 100%;
   display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  align-items: start;
   gap: 14px;
   overflow: hidden;
   background:
