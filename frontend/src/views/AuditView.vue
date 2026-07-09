@@ -46,7 +46,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="record_id" label="ID" width="76" />
-            <el-table-column label="快照" width="760">
+            <el-table-column label="快照" :min-width="snapshotColumnWidth">
               <template #default="{ row }">
                 <code class="snapshot-text">{{ snapshotText(row.snapshot) }}</code>
               </template>
@@ -65,7 +65,7 @@
             </article>
           </div>
           <el-table :data="fileStatuses" height="100%" empty-text="暂无文件状态">
-            <el-table-column prop="original_name" label="文件名(首次)" width="360" />
+            <el-table-column prop="original_name" label="文件名(首次)" :min-width="fileNameColumnWidth" />
             <el-table-column label="SHA-256" width="188">
               <template #default="{ row }">
                 <el-tooltip :content="displayHash(row) || '-'" placement="top" :disabled="!displayHash(row)">
@@ -73,7 +73,7 @@
                 </el-tooltip>
               </template>
             </el-table-column>
-            <el-table-column prop="biz_type" label="类型" width="260">
+            <el-table-column prop="biz_type" label="类型" :min-width="fileTypeColumnWidth">
               <template #default="{ row }">{{ bizTypeLabel(row.biz_type) }}</template>
             </el-table-column>
             <el-table-column label="状态" width="106">
@@ -114,6 +114,16 @@ const filters = reactive({
 const auditHistory = ref<AuditHistory[]>([])
 const fileStatuses = ref<FileResourceStatus[]>([])
 const fileGcStats = ref<FileGcStat[]>([])
+
+const snapshotColumnWidth = computed(() => {
+  return contentColumnWidth(auditHistory.value.map((item) => snapshotText(item.snapshot)), 760, 3200)
+})
+const fileNameColumnWidth = computed(() => {
+  return contentColumnWidth(fileStatuses.value.map((item) => item.original_name), 360, 1400)
+})
+const fileTypeColumnWidth = computed(() => {
+  return contentColumnWidth(fileStatuses.value.map((item) => bizTypeLabel(item.biz_type)), 320, 820)
+})
 
 const tableOptions = [
   { label: '作业提交', value: 'assignment_submission' },
@@ -250,6 +260,20 @@ function snapshotText(snapshot: unknown) {
     }
   }
   return JSON.stringify(snapshot)
+}
+
+function contentColumnWidth(values: Array<string | undefined | null>, min: number, max: number) {
+  const width = values.reduce((current, value) => Math.max(current, estimateTextWidth(value || '-')), min)
+  return Math.min(width, max)
+}
+
+function estimateTextWidth(value: string) {
+  let width = 34
+  for (const char of value) {
+    const code = char.codePointAt(0) || 0
+    width += code > 255 ? 14 : 7.5
+  }
+  return Math.ceil(width)
 }
 
 onMounted(loadAll)
@@ -414,13 +438,8 @@ onMounted(loadAll)
   max-width: 100%;
 }
 
-.audit-pane :deep(.el-table__body),
-.audit-pane :deep(.el-table__header) {
-  min-width: max-content;
-}
-
 .audit-pane :deep(.el-table .cell) {
-  overflow: visible;
+  overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
 }
@@ -433,8 +452,9 @@ onMounted(loadAll)
 }
 
 .snapshot-text {
-  display: inline-block;
-  overflow: visible;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   color: var(--app-text-soft);
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;
