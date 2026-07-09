@@ -115,7 +115,7 @@ const actionOptions = [
   { label: '更新', value: 'UPDATE' },
   { label: '删除', value: 'DELETE' },
   { label: '批改', value: 'GRADE' },
-  { label: '重提', value: 'RESUBMIT' },
+  { label: '重交', value: 'RESUBMIT' },
   { label: '加入', value: 'JOIN' },
   { label: '释放', value: 'RELEASE' }
 ]
@@ -167,7 +167,7 @@ function actionLabel(action: string) {
     UPDATE: '更新',
     DELETE: '删除',
     GRADE: '批改',
-    RESUBMIT: '重提',
+    RESUBMIT: '重交',
     JOIN: '加入',
     RELEASE: '释放'
   }
