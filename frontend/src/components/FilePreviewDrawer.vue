@@ -9,7 +9,7 @@
         <small v-if="sizeText">{{ sizeText }}</small>
       </div>
 
-      <div class="file-preview-stage">
+      <div class="file-preview-stage" :class="{ 'file-preview-stage--html': previewKind === 'html' }">
         <img v-if="previewKind === 'image'" class="image-preview" :src="previewUrl" :alt="fileName" />
 
         <iframe
@@ -215,6 +215,11 @@ function resetTextPreview() {
   background: var(--app-bg-warm);
 }
 
+.file-preview-stage--html {
+  place-items: stretch;
+  background: #fff;
+}
+
 .image-preview {
   max-width: 100%;
   max-height: 68vh;
@@ -244,19 +249,17 @@ function resetTextPreview() {
   width: 100%;
   height: 68vh;
   min-height: 500px;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  padding: 12px;
   place-self: stretch;
 }
 
 .html-preview {
+  flex: 1 1 auto;
   width: 100%;
-  height: 100%;
   min-height: 0;
-  border: 1px solid var(--app-divider);
-  border-radius: 8px;
+  border: 0;
   background: #fff;
 }
 
@@ -268,6 +271,10 @@ function resetTextPreview() {
   background: rgb(var(--app-brand-rgb) / 7%);
   font-size: 12px;
   font-weight: 600;
+}
+
+.html-preview-pane .preview-note {
+  margin: 12px 12px 0;
 }
 
 .text-preview-pane pre {
