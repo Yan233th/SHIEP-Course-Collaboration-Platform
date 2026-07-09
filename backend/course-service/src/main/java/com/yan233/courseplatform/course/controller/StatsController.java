@@ -47,9 +47,12 @@ public class StatsController {
 
     @GetMapping("/audit-history")
     public Result<List<Map<String, Object>>> auditHistory(@RequestParam(defaultValue = "30") int limit,
+                                                          @RequestParam(required = false) String tableName,
+                                                          @RequestParam(required = false) String actionType,
+                                                          @RequestParam(required = false) Long recordId,
                                                           HttpServletRequest servletRequest) {
         AccessControl.requireRole(UserContext.from(servletRequest), "ADMIN");
-        return Result.ok(courseService.auditHistory(limit));
+        return Result.ok(courseService.auditHistory(tableName, actionType, recordId, limit));
     }
 
     @GetMapping("/file-status")

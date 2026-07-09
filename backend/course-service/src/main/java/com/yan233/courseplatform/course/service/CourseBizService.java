@@ -38,5 +38,5 @@ public interface CourseBizService extends IService<Course> {
 
     List<Map<String, Object>> assignmentSubmissionStats(Long courseId);
 
-    List<Map<String, Object>> auditHistory(int limit);
+    List<Map<String, Object>> auditHistory(String tableName, String actionType, Long recordId, int limit);
 }

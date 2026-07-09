@@ -164,7 +164,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             return List.of(
                     new MenuItem("系统管理", "/admin", List.of(
                             new MenuItem("用户管理", "/admin/users", List.of()),
-                            new MenuItem("统计分析", "/admin/stats", List.of())
+                            new MenuItem("统计分析", "/admin/stats", List.of()),
+                            new MenuItem("审计日志", "/admin/audit", List.of())
                     )),
                     common.get(0),
                     common.get(1)

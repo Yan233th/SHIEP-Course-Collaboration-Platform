@@ -178,9 +178,16 @@ public class CourseBizServiceImpl extends ServiceImpl<CourseMapper, Course> impl
     }
 
     @Override
-    public List<Map<String, Object>> auditHistory(int limit) {
+    public List<Map<String, Object>> auditHistory(String tableName, String actionType, Long recordId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
-        return baseMapper.auditHistory(safeLimit);
+        return baseMapper.auditHistory(cleanFilter(tableName), cleanFilter(actionType), recordId, safeLimit);
+    }
+
+    private String cleanFilter(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private void applyCourseFilters(LambdaQueryWrapper<Course> wrapper, CourseQuery query) {

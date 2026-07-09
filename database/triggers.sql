@@ -3,6 +3,7 @@ SET NAMES utf8mb4;
 
 DROP TRIGGER IF EXISTS trg_resource_update_history;
 DROP TRIGGER IF EXISTS trg_submission_grade_history;
+DROP TRIGGER IF EXISTS trg_submission_resubmit_history;
 DROP TRIGGER IF EXISTS trg_project_member_insert_history;
 DROP TRIGGER IF EXISTS trg_file_reference_release_queue;
 
@@ -24,13 +25,31 @@ CREATE TRIGGER trg_submission_grade_history
 AFTER UPDATE ON assignment_submission
 FOR EACH ROW
 BEGIN
-  IF NOT (OLD.score <=> NEW.score) OR NOT (OLD.feedback <=> NEW.feedback) THEN
+  IF NEW.status = 1 AND (NOT (OLD.score <=> NEW.score) OR NOT (OLD.feedback <=> NEW.feedback)) THEN
     INSERT INTO audit_history(table_name, record_id, action_type, snapshot)
     VALUES (
       'assignment_submission',
       NEW.id,
       'GRADE',
       JSON_OBJECT('student_id', NEW.student_id, 'score', NEW.score, 'feedback', NEW.feedback)
+    );
+  END IF;
+END //
+
+CREATE TRIGGER trg_submission_resubmit_history
+AFTER UPDATE ON assignment_submission
+FOR EACH ROW
+BEGIN
+  IF OLD.deleted = 0
+    AND NEW.deleted = 0
+    AND NEW.status = 0
+    AND (NOT (OLD.content <=> NEW.content) OR NOT (OLD.file_id <=> NEW.file_id)) THEN
+    INSERT INTO audit_history(table_name, record_id, action_type, snapshot)
+    VALUES (
+      'assignment_submission',
+      NEW.id,
+      'RESUBMIT',
+      JSON_OBJECT('assignment_id', NEW.assignment_id, 'student_id', NEW.student_id, 'file_id', NEW.file_id)
     );
   END IF;
 END //

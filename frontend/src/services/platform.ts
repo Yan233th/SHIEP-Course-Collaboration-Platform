@@ -55,6 +55,13 @@ export interface UserPayload {
   status: number
 }
 
+export interface AuditQuery {
+  tableName?: string
+  actionType?: string
+  recordId?: number
+  limit?: number
+}
+
 export interface ProfilePayload {
   realName: string
   email?: string
@@ -177,8 +184,9 @@ export const courseService = {
   getAssignmentSubmissionStats(courseId: number) {
     return unwrap<AssignmentSubmissionStat[]>(http.get('/stats/assignment-submissions', { params: { courseId } }))
   },
-  getAuditHistory(limit = 30) {
-    return unwrap<AuditHistory[]>(http.get('/stats/audit-history', { params: { limit } }))
+  getAuditHistory(params: AuditQuery | number = { limit: 30 }) {
+    const query = typeof params === 'number' ? { limit: params } : params
+    return unwrap<AuditHistory[]>(http.get('/stats/audit-history', { params: query }))
   },
   getFileStatus() {
     return unwrap<FileResourceStatus[]>(http.get('/stats/file-status'))

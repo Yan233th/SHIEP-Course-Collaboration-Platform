@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -125,11 +126,31 @@ public class AssignmentController {
         if (request.getFileId() == null && (request.getContent() == null || request.getContent().isBlank())) {
             throw new BusinessException(400, "请填写提交内容或上传附件");
         }
-        if (!current.isAdmin()) {
-            request.setStudentId(current.userId());
+        if (!current.isAdmin() && assignment.getDueTime() != null && LocalDateTime.now().isAfter(assignment.getDueTime())) {
+            throw new BusinessException(400, "作业已截止，不能重新提交");
         }
+
+        Long studentId = current.isAdmin() ? request.getStudentId() : current.userId();
+        Submission existing = submissionMapper.selectOne(new LambdaQueryWrapper<Submission>()
+                .eq(Submission::getAssignmentId, assignment.getId())
+                .eq(Submission::getStudentId, studentId)
+                .last("LIMIT 1"));
+        if (existing != null) {
+            Long oldFileId = existing.getFileId();
+            existing.setFileId(request.getFileId());
+            existing.setContent(request.getContent());
+            existing.setScore(null);
+            existing.setFeedback(null);
+            existing.setStatus(0);
+            submissionMapper.updateById(existing);
+            replaceReference(oldFileId, existing.getFileId(), SUBMISSION_OWNER, existing.getId());
+            return Result.ok(toSubmissionViews(List.of(existing)).get(0));
+        }
+
         Submission submission = new Submission();
         BeanUtils.copyProperties(request, submission);
+        submission.setStudentId(studentId);
+        submission.setStatus(0);
         submission.setDeleted(0);
         submissionMapper.insert(submission);
         bindReference(submission.getFileId(), SUBMISSION_OWNER, submission.getId());

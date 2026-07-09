@@ -26,10 +26,25 @@ public interface CourseMapper extends BaseMapper<Course> {
     List<Map<String, Object>> assignmentSubmissionStats(@Param("courseId") Long courseId);
 
     @Select("""
+            <script>
             SELECT id, table_name, record_id, action_type, snapshot, create_time
             FROM audit_history
+            WHERE 1 = 1
+            <if test="tableName != null and tableName != ''">
+              AND table_name = #{tableName}
+            </if>
+            <if test="actionType != null and actionType != ''">
+              AND action_type = #{actionType}
+            </if>
+            <if test="recordId != null">
+              AND record_id = #{recordId}
+            </if>
             ORDER BY create_time DESC, id DESC
             LIMIT #{limit}
+            </script>
             """)
-    List<Map<String, Object>> auditHistory(@Param("limit") int limit);
+    List<Map<String, Object>> auditHistory(@Param("tableName") String tableName,
+                                           @Param("actionType") String actionType,
+                                           @Param("recordId") Long recordId,
+                                           @Param("limit") int limit);
 }
