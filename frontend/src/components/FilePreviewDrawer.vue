@@ -165,7 +165,8 @@ function resetTextPreview() {
 
 <style scoped>
 .file-preview-shell {
-  min-height: 0;
+  height: calc(100vh - 128px);
+  min-height: 560px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 14px;
@@ -208,7 +209,8 @@ function resetTextPreview() {
 .file-preview-stage {
   min-height: 420px;
   display: grid;
-  place-items: center;
+  align-items: stretch;
+  justify-items: stretch;
   overflow: hidden;
   border: 1px solid var(--app-border);
   border-radius: 8px;
@@ -216,6 +218,7 @@ function resetTextPreview() {
 }
 
 .image-preview {
+  place-self: center;
   max-width: 100%;
   max-height: 68vh;
   object-fit: contain;
@@ -242,12 +245,11 @@ function resetTextPreview() {
 
 .html-preview-pane {
   width: 100%;
-  height: 68vh;
-  min-height: 500px;
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
-  padding: 12px;
   place-self: stretch;
 }
 
@@ -255,8 +257,7 @@ function resetTextPreview() {
   width: 100%;
   height: 100%;
   min-height: 0;
-  border: 1px solid var(--app-divider);
-  border-radius: 8px;
+  border: 0;
   background: #fff;
 }
 
@@ -293,6 +294,7 @@ function resetTextPreview() {
 }
 
 .unsupported-preview {
+  place-self: center;
   max-width: 360px;
   display: grid;
   justify-items: center;
