@@ -28,14 +28,28 @@
         </div>
         <h3>{{ showcase.title }}</h3>
         <p>{{ showcase.summary }}</p>
+        <FileActions v-if="showcase.fileId" :file-id="showcase.fileId" :file="showcase.file" />
         <div class="showcase-card-foot">
           <el-link v-if="showcase.linkUrl" :href="showcase.linkUrl" target="_blank">打开链接</el-link>
           <span v-else>暂无外部链接</span>
+          <div v-if="can('PUBLISH_SHOWCASE')" class="showcase-card-actions">
+            <el-button size="small" text :icon="Edit" @click="openEditShowcaseDrawer(showcase)">编辑</el-button>
+            <el-button
+              size="small"
+              text
+              type="danger"
+              :icon="Delete"
+              :loading="deletingShowcaseId === showcase.id"
+              @click="deleteShowcase(showcase)"
+            >
+              删除
+            </el-button>
+          </div>
         </div>
       </article>
     </div>
 
-    <WorkspaceDrawer v-model="showcaseDrawer" title="发布成果" @closed="resetShowcaseForm">
+    <WorkspaceDrawer v-model="showcaseDrawer" :title="drawerTitle" @closed="resetShowcaseForm">
       <el-form :model="showcaseForm" label-position="top" class="drawer-form">
         <el-form-item label="项目组">
           <el-select v-model="showcaseForm.groupId" filterable placeholder="选择项目组">
@@ -45,12 +59,30 @@
         <el-form-item label="标题"><el-input v-model="showcaseForm.title" /></el-form-item>
         <el-form-item label="链接"><el-input v-model="showcaseForm.linkUrl" placeholder="https://" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="showcaseForm.summary" type="textarea" :rows="6" /></el-form-item>
+        <el-form-item label="成果附件">
+          <div class="drawer-file-field">
+            <div v-if="showcaseForm.fileId" class="drawer-current-file">
+              <FileActions :file-id="showcaseForm.fileId" :file="editingShowcase?.file" />
+              <el-button size="small" text type="danger" @click="removeShowcaseFile">移除</el-button>
+            </div>
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :limit="1"
+              :file-list="showcaseFileList"
+              :on-change="handleShowcaseFileChange"
+              :on-remove="handleShowcaseFileRemove"
+            >
+              <el-button :icon="Upload">{{ showcaseForm.fileId ? '替换附件' : '选择附件' }}</el-button>
+            </el-upload>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="drawer-actions">
           <el-button @click="showcaseDrawer = false">取消</el-button>
-          <el-button type="primary" :icon="Plus" :loading="saving" :disabled="!canCreateShowcase" @click="createShowcase">
-            发布
+          <el-button type="primary" :icon="editingShowcase ? Check : Plus" :loading="saving" :disabled="!canSaveShowcase" @click="saveShowcase">
+            {{ editingShowcase ? '保存' : '发布' }}
           </el-button>
         </div>
       </template>
@@ -60,19 +92,24 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, type UploadFile, type UploadUserFile } from 'element-plus'
+import { Check, Delete, Edit, Plus, Upload } from '@element-plus/icons-vue'
+import FileActions from '../components/FileActions.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
-import { collaborationService } from '../services/platform'
-import { can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
+import { collaborationService, fileService } from '../services/platform'
+import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import { formatDateTime } from '../utils/display'
 import type { ProjectGroup, Showcase } from '../types'
 
 const showcases = ref<Showcase[]>([])
 const showcaseGroups = ref<ProjectGroup[]>([])
 const showcaseDrawer = ref(false)
+const editingShowcase = ref<Showcase | null>(null)
 const loading = ref(false)
 const saving = ref(false)
+const deletingShowcaseId = ref<number | undefined>(undefined)
+const showcaseFile = ref<File | null>(null)
+const showcaseFileList = ref<UploadUserFile[]>([])
 const showcaseForm = reactive({
   groupId: undefined as number | undefined,
   fileId: undefined as number | undefined,
@@ -82,7 +119,8 @@ const showcaseForm = reactive({
   status: 1
 })
 
-const canCreateShowcase = computed(() => {
+const drawerTitle = computed(() => editingShowcase.value ? '编辑成果' : '发布成果')
+const canSaveShowcase = computed(() => {
   return Boolean(showcaseForm.groupId && showcaseForm.title.trim() && showcaseForm.summary.trim())
 })
 const groupNameMap = computed(() => new Map(showcaseGroups.value.map((group) => [group.id, group.name])))
@@ -121,34 +159,92 @@ function openShowcaseDrawer() {
   showcaseDrawer.value = true
 }
 
+function openEditShowcaseDrawer(showcase: Showcase) {
+  editingShowcase.value = showcase
+  showcaseForm.groupId = showcase.groupId
+  showcaseForm.fileId = showcase.fileId
+  showcaseForm.title = showcase.title
+  showcaseForm.summary = showcase.summary || ''
+  showcaseForm.linkUrl = showcase.linkUrl || ''
+  showcaseForm.status = 1
+  showcaseFile.value = null
+  showcaseFileList.value = []
+  showcaseDrawer.value = true
+}
+
 function resetShowcaseForm() {
+  editingShowcase.value = null
   showcaseForm.groupId = defaultGroupId()
   showcaseForm.fileId = undefined
   showcaseForm.title = ''
   showcaseForm.summary = ''
   showcaseForm.linkUrl = ''
   showcaseForm.status = 1
+  showcaseFile.value = null
+  showcaseFileList.value = []
   saving.value = false
 }
 
-async function createShowcase() {
-  if (!canCreateShowcase.value) return
+function handleShowcaseFileChange(file: UploadFile) {
+  showcaseFileList.value = [file]
+  showcaseFile.value = file.raw || null
+}
+
+function handleShowcaseFileRemove() {
+  showcaseFile.value = null
+  showcaseFileList.value = []
+}
+
+function removeShowcaseFile() {
+  showcaseForm.fileId = undefined
+  showcaseFile.value = null
+  showcaseFileList.value = []
+}
+
+function showcasePayload(fileId?: number) {
+  return {
+    courseId: currentCourseId.value,
+    groupId: showcaseForm.groupId,
+    fileId,
+    title: showcaseForm.title.trim(),
+    summary: showcaseForm.summary,
+    linkUrl: showcaseForm.linkUrl,
+    status: showcaseForm.status
+  }
+}
+
+async function saveShowcase() {
+  if (!canSaveShowcase.value) return
   saving.value = true
   try {
-    await collaborationService.createShowcase({
-      courseId: currentCourseId.value,
-      groupId: showcaseForm.groupId,
-      fileId: showcaseForm.fileId,
-      title: showcaseForm.title,
-      summary: showcaseForm.summary,
-      linkUrl: showcaseForm.linkUrl,
-      status: showcaseForm.status
-    })
-    ElMessage.success('成果已发布')
+    let fileId = showcaseForm.fileId
+    if (showcaseFile.value) {
+      const uploaded = await fileService.upload(showcaseFile.value, appState.session.userId, 'showcase')
+      fileId = uploaded.id
+    }
+    if (editingShowcase.value) {
+      await collaborationService.updateShowcase(editingShowcase.value.id, showcasePayload(fileId))
+      ElMessage.success('成果已更新')
+    } else {
+      await collaborationService.createShowcase(showcasePayload(fileId))
+      ElMessage.success('成果已发布')
+    }
     showcaseDrawer.value = false
     await loadShowcases()
   } finally {
     saving.value = false
+  }
+}
+
+async function deleteShowcase(showcase: Showcase) {
+  await ElMessageBox.confirm(`确认删除成果「${showcase.title}」？关联附件会进入文件回收流程。`, '删除成果', { type: 'warning' })
+  deletingShowcaseId.value = showcase.id
+  try {
+    await collaborationService.deleteShowcase(showcase.id)
+    ElMessage.success('成果已删除')
+    await loadShowcases()
+  } finally {
+    deletingShowcaseId.value = undefined
   }
 }
 
@@ -209,5 +305,32 @@ watch([currentCourseId, refreshSignal], () => {
 .showcase-card-foot {
   padding-top: 12px;
   border-top: 1px solid var(--app-divider);
+}
+
+.showcase-card .file-actions {
+  margin: 0 0 12px;
+}
+
+.showcase-card-actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawer-file-field {
+  display: grid;
+  gap: 10px;
+}
+
+.drawer-current-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
 }
 </style>

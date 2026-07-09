@@ -230,6 +230,12 @@ export const collaborationService = {
   },
   createShowcase(payload: Record<string, unknown>) {
     return unwrap<Showcase>(http.post('/showcases', payload))
+  },
+  updateShowcase(id: number, payload: Record<string, unknown>) {
+    return unwrap<Showcase>(http.put(`/showcases/${id}`, payload))
+  },
+  deleteShowcase(id: number) {
+    return unwrap<void>(http.delete(`/showcases/${id}`))
   }
 }
 

@@ -3,6 +3,7 @@ package com.yan233.courseplatform.collaboration.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yan233.courseplatform.collaboration.client.FileFeignClient;
 import com.yan233.courseplatform.collaboration.dto.ShowcaseRequest;
+import com.yan233.courseplatform.collaboration.dto.ShowcaseView;
 import com.yan233.courseplatform.collaboration.entity.Showcase;
 import com.yan233.courseplatform.collaboration.mapper.ShowcaseMapper;
 import com.yan233.courseplatform.collaboration.service.CollaborationAccessService;
@@ -10,6 +11,7 @@ import com.yan233.courseplatform.common.api.Result;
 import com.yan233.courseplatform.common.auth.AccessControl;
 import com.yan233.courseplatform.common.auth.CurrentUser;
 import com.yan233.courseplatform.common.dto.FileOwnerRequest;
+import com.yan233.courseplatform.common.dto.FileBrief;
 import com.yan233.courseplatform.common.dto.FileReferenceReplaceRequest;
 import com.yan233.courseplatform.common.dto.FileReferenceRequest;
 import com.yan233.courseplatform.common.exception.BusinessException;
@@ -29,6 +31,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/showcases")
@@ -46,22 +53,23 @@ public class ShowcaseController {
     }
 
     @GetMapping
-    public Result<List<Showcase>> list(@RequestParam(required = false) Long courseId, HttpServletRequest servletRequest) {
+    public Result<List<ShowcaseView>> list(@RequestParam(required = false) Long courseId, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         if (courseId == null) {
             AccessControl.requireRole(current, "ADMIN");
         } else {
             accessService.requireCanViewCourse(courseId, current);
         }
-        return Result.ok(mapper.selectList(new LambdaQueryWrapper<Showcase>()
+        List<Showcase> showcases = mapper.selectList(new LambdaQueryWrapper<Showcase>()
                 .eq(courseId != null, Showcase::getCourseId, courseId)
                 .eq(Showcase::getStatus, 1)
-                .orderByDesc(Showcase::getCreateTime)));
+                .orderByDesc(Showcase::getCreateTime));
+        return Result.ok(toViews(showcases));
     }
 
     @PostMapping
     @Transactional
-    public Result<Showcase> create(@RequestBody @Valid ShowcaseRequest request, HttpServletRequest servletRequest) {
+    public Result<ShowcaseView> create(@RequestBody @Valid ShowcaseRequest request, HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         accessService.requireCanViewCourse(request.getCourseId(), current);
         accessService.requireProjectWritable(request.getGroupId(), current);
@@ -70,14 +78,14 @@ public class ShowcaseController {
         showcase.setDeleted(0);
         mapper.insert(showcase);
         bindReference(showcase.getFileId(), showcase.getId());
-        return Result.ok(showcase);
+        return Result.ok(toViews(List.of(showcase)).get(0));
     }
 
     @PutMapping("/{id}")
     @Transactional
-    public Result<Showcase> update(@PathVariable Long id,
-                                   @RequestBody @Valid ShowcaseRequest request,
-                                   HttpServletRequest servletRequest) {
+    public Result<ShowcaseView> update(@PathVariable Long id,
+                                       @RequestBody @Valid ShowcaseRequest request,
+                                       HttpServletRequest servletRequest) {
         CurrentUser current = UserContext.from(servletRequest);
         Showcase showcase = requireShowcase(id);
         accessService.requireCanViewCourse(request.getCourseId(), current);
@@ -88,7 +96,7 @@ public class ShowcaseController {
         showcase.setId(id);
         mapper.updateById(showcase);
         replaceReference(oldFileId, showcase.getFileId(), showcase.getId());
-        return Result.ok(showcase);
+        return Result.ok(toViews(List.of(showcase)).get(0));
     }
 
     @DeleteMapping("/{id}")
@@ -135,5 +143,42 @@ public class ShowcaseController {
         request.setOwnerType(OWNER_TYPE);
         request.setOwnerId(ownerId);
         fileFeignClient.releaseOwner(request);
+    }
+
+    private List<ShowcaseView> toViews(List<Showcase> showcases) {
+        Map<Long, FileBrief> files = filesById(showcases.stream().map(Showcase::getFileId).toList());
+        return showcases.stream()
+                .map(showcase -> new ShowcaseView(
+                        showcase.getId(),
+                        showcase.getCourseId(),
+                        showcase.getGroupId(),
+                        showcase.getFileId(),
+                        files.get(showcase.getFileId()),
+                        showcase.getTitle(),
+                        showcase.getSummary(),
+                        showcase.getLinkUrl(),
+                        showcase.getStatus(),
+                        showcase.getCreateTime(),
+                        showcase.getUpdateTime()))
+                .toList();
+    }
+
+    private Map<Long, FileBrief> filesById(List<Long> fileIds) {
+        List<Long> ids = fileIds.stream()
+                .flatMap(id -> id == null ? Stream.empty() : Stream.of(id))
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            Result<List<FileBrief>> result = fileFeignClient.filesByIds(ids);
+            if (result.getCode() == 200 && result.getData() != null) {
+                return result.getData().stream().collect(Collectors.toMap(FileBrief::id, Function.identity(), (a, b) -> a));
+            }
+        } catch (RuntimeException ignored) {
+            return Collections.emptyMap();
+        }
+        return Collections.emptyMap();
     }
 }

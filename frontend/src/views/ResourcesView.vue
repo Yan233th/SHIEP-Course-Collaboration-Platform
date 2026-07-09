@@ -51,9 +51,9 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="预览" width="90">
+      <el-table-column label="文件" min-width="220">
         <template #default="{ row }">
-          <el-link v-if="row.fileId" :href="`/api/files/preview/${row.fileId}`" target="_blank">打开</el-link>
+          <FileActions v-if="row.fileId" :file-id="row.fileId" :file="row.file" />
         </template>
       </el-table-column>
       <el-table-column v-if="canManageResource" label="操作" width="150" fixed="right">
@@ -113,6 +113,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox, type UploadFile, type UploadUserFile } from 'element-plus'
 import { Check, Close, Search, Upload } from '@element-plus/icons-vue'
+import FileActions from '../components/FileActions.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { courseService, fileService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'

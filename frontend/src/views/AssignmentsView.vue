@@ -81,13 +81,7 @@
               </div>
             </div>
             <p class="assignment-description">{{ selectedAssignment.description || '暂无说明' }}</p>
-            <div v-if="selectedAssignment.fileId" class="assignment-file-strip">
-              <span>作业附件</span>
-              <el-link :href="fileUrl(selectedAssignment.fileId, selectedAssignment.file)" target="_blank">
-                {{ fileName(selectedAssignment.fileId, selectedAssignment.file) }}
-              </el-link>
-              <small>{{ formatFileSize(selectedAssignment.file?.sizeBytes) }}</small>
-            </div>
+            <FileActions v-if="selectedAssignment.fileId" :file-id="selectedAssignment.fileId" :file="selectedAssignment.file" />
             <dl>
               <div>
                 <dt>截止时间</dt>
@@ -115,9 +109,9 @@
                   <span class="table-ellipsis">{{ row.content || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="附件" width="92">
+              <el-table-column label="附件" min-width="220">
                 <template #default="{ row }">
-                  <el-link v-if="row.fileId" :href="fileUrl(row.fileId, row.file)" target="_blank">打开</el-link>
+                  <FileActions v-if="row.fileId" :file-id="row.fileId" :file="row.file" />
                   <span v-else class="muted">-</span>
                 </template>
               </el-table-column>
@@ -151,9 +145,7 @@
         <el-form-item label="作业附件">
           <div class="drawer-file-field">
             <div v-if="assignmentForm.fileId" class="drawer-current-file">
-              <el-link :href="fileUrl(assignmentForm.fileId, editingAssignment?.file)" target="_blank">
-                {{ fileName(assignmentForm.fileId, editingAssignment?.file) }}
-              </el-link>
+              <FileActions :file-id="assignmentForm.fileId" :file="editingAssignment?.file" />
               <el-button size="small" text type="danger" @click="removeAssignmentFile">移除</el-button>
             </div>
             <el-upload
@@ -210,9 +202,7 @@
       <div v-if="selectedSubmission" class="grading-preview">
         <span>学生提交</span>
         <p>{{ selectedSubmission.content || '仅提交附件' }}</p>
-        <el-link v-if="selectedSubmission.fileId" :href="fileUrl(selectedSubmission.fileId, selectedSubmission.file)" target="_blank">
-          {{ fileName(selectedSubmission.fileId, selectedSubmission.file) }}
-        </el-link>
+        <FileActions v-if="selectedSubmission.fileId" :file-id="selectedSubmission.fileId" :file="selectedSubmission.file" />
       </div>
       <el-form :model="gradeForm" label-position="top" class="drawer-form">
         <el-form-item label="分数">
@@ -234,11 +224,12 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox, type UploadFile, type UploadUserFile } from 'element-plus'
 import { Check, Delete, Edit, Plus, Upload } from '@element-plus/icons-vue'
+import FileActions from '../components/FileActions.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import { courseService, fileService } from '../services/platform'
 import { appState, can, currentCourseId, currentCourseLabel, refreshSignal } from '../state/appState'
 import { formatDateTime } from '../utils/display'
-import type { Assignment, FileBrief, Submission } from '../types'
+import type { Assignment, Submission } from '../types'
 
 const assignments = ref<Assignment[]>([])
 const submissions = ref<Submission[]>([])
@@ -286,22 +277,6 @@ const canCreateSubmission = computed(() => {
 
 function formatDueTime(value?: string) {
   return formatDateTime(value)
-}
-
-function fileUrl(fileId?: number, file?: FileBrief | null) {
-  if (file?.previewUrl) return file.previewUrl
-  return fileId ? `/api/files/preview/${fileId}` : ''
-}
-
-function fileName(fileId?: number, file?: FileBrief | null) {
-  return file?.originalName || (fileId ? `附件 #${fileId}` : '-')
-}
-
-function formatFileSize(size?: number) {
-  if (!size && size !== 0) return ''
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
 
 async function loadAssignments() {
@@ -545,24 +520,11 @@ watch([currentCourseId, refreshSignal], () => {
   white-space: pre-wrap;
 }
 
-.assignment-file-strip,
 .drawer-current-file,
 .grading-preview {
   border: 1px solid var(--app-border);
   border-radius: 8px;
   background: var(--app-surface);
-}
-
-.assignment-file-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-}
-
-.assignment-file-strip small {
-  color: var(--app-muted);
 }
 
 .drawer-file-field {

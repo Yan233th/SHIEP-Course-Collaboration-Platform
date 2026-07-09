@@ -84,6 +84,7 @@ export interface ResourceItem {
   id: number
   courseId: number
   fileId?: number
+  file?: FileBrief | null
   title: string
   category: string
   tags?: string
@@ -177,6 +178,7 @@ export interface Showcase {
   courseId: number
   groupId: number
   fileId?: number
+  file?: FileBrief | null
   title: string
   summary: string
   linkUrl?: string
