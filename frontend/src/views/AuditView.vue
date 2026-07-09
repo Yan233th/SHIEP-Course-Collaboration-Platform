@@ -65,8 +65,13 @@
             </article>
           </div>
           <el-table :data="fileStatuses" height="100%" empty-text="暂无文件状态">
-            <el-table-column prop="original_name" label="文件" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="biz_type" label="类型" width="118" show-overflow-tooltip>
+            <el-table-column prop="original_name" label="文件名(首次)" min-width="200" show-overflow-tooltip />
+            <el-table-column label="Hash" width="104">
+              <template #default="{ row }">
+                <code class="hash-text">{{ shortHash(row.content_hash) }}</code>
+              </template>
+            </el-table-column>
+            <el-table-column prop="biz_type" label="类型" width="176" show-overflow-tooltip>
               <template #default="{ row }">{{ bizTypeLabel(row.biz_type) }}</template>
             </el-table-column>
             <el-table-column label="状态" width="106">
@@ -216,6 +221,10 @@ function bizTypeLabel(type?: string) {
     .map((item) => labels[item.toLowerCase()] || item)
     .filter((item, index, items) => items.indexOf(item) === index)
     .join('、') || '-'
+}
+
+function shortHash(hash?: string | null) {
+  return hash ? hash.slice(0, 10) : '-'
 }
 
 function lifecycleTagType(status: string) {
@@ -420,6 +429,13 @@ onMounted(loadAll)
 .audit-time {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.hash-text {
+  color: var(--app-text-soft);
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 @media (max-width: 1180px) {

@@ -223,6 +223,7 @@ export interface AuditHistory {
 export interface FileResourceStatus {
   file_id: number
   original_name: string
+  content_hash?: string | null
   biz_type: string
   size_bytes: number
   uploader_id: number

@@ -36,6 +36,7 @@ CREATE OR REPLACE VIEW v_file_resource_status AS
 SELECT
   fm.id AS file_id,
   fm.original_name,
+  fm.content_hash,
   COALESCE(
     GROUP_CONCAT(
       DISTINCT CASE WHEN fr.deleted = 0 AND fr.status = 1 THEN fr.owner_type END
@@ -59,4 +60,4 @@ SELECT
 FROM file_metadata fm
 LEFT JOIN file_reference fr ON fr.file_id = fm.id
 LEFT JOIN file_gc_queue q ON q.file_id = fm.id
-GROUP BY fm.id, fm.original_name, fm.biz_type, fm.size_bytes, fm.uploader_id, fm.deleted;
+GROUP BY fm.id, fm.original_name, fm.content_hash, fm.biz_type, fm.size_bytes, fm.uploader_id, fm.deleted;
