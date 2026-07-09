@@ -86,6 +86,7 @@ CREATE TABLE file_metadata (
   storage_name VARCHAR(255) NOT NULL,
   storage_path VARCHAR(500) NOT NULL,
   content_type VARCHAR(100),
+  content_hash VARCHAR(64),
   size_bytes BIGINT NOT NULL,
   uploader_id BIGINT NOT NULL,
   biz_type VARCHAR(50) NOT NULL DEFAULT 'course',
@@ -96,7 +97,8 @@ CREATE TABLE file_metadata (
   CONSTRAINT fk_file_uploader FOREIGN KEY (uploader_id) REFERENCES sys_user(id),
   CONSTRAINT ck_file_size CHECK (size_bytes >= 0),
   INDEX idx_file_uploader (uploader_id),
-  INDEX idx_file_biz_type (biz_type)
+  INDEX idx_file_biz_type (biz_type),
+  INDEX idx_file_content_hash (content_hash, size_bytes, deleted, status)
 ) COMMENT='文件元数据';
 
 CREATE TABLE file_reference (

@@ -17,9 +17,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +37,17 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
         if (file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
+        String contentHash = sha256(file);
+        FileMetadata existing = lambdaQuery()
+                .eq(FileMetadata::getContentHash, contentHash)
+                .eq(FileMetadata::getSizeBytes, file.getSize())
+                .eq(FileMetadata::getStatus, 1)
+                .last("LIMIT 1")
+                .one();
+        if (existing != null) {
+            return existing;
+        }
+
         String original = file.getOriginalFilename() == null ? "unnamed" : file.getOriginalFilename();
         String ext = "";
         int dot = original.lastIndexOf('.');
@@ -54,6 +68,7 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
         metadata.setStorageName(storageName);
         metadata.setStoragePath(target.normalize().toString());
         metadata.setContentType(file.getContentType());
+        metadata.setContentHash(contentHash);
         metadata.setSizeBytes(file.getSize());
         metadata.setUploaderId(uploaderId);
         metadata.setBizType(bizType);
@@ -61,6 +76,24 @@ public class FileStorageServiceImpl extends ServiceImpl<FileMetadataMapper, File
         metadata.setDeleted(0);
         save(metadata);
         return metadata;
+    }
+
+    private String sha256(MultipartFile file) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (var input = file.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = input.read(buffer)) != -1) {
+                    digest.update(buffer, 0, read);
+                }
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 not available", ex);
+        } catch (IOException ex) {
+            throw new BusinessException(500, "文件读取失败: " + ex.getMessage());
+        }
     }
 
     @Override

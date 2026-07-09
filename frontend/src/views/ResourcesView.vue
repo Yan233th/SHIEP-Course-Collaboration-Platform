@@ -66,7 +66,9 @@
 
     <WorkspaceDrawer v-model="resourceDrawer" :title="editingResource ? '编辑资源' : '上传资源'" @closed="resetResourceForm">
       <el-form :model="resourceForm" label-position="top" class="drawer-form">
-        <el-form-item label="资源标题"><el-input v-model="resourceForm.title" /></el-form-item>
+        <el-form-item v-if="editingResource || resourceFileList.length <= 1" label="资源标题">
+          <el-input v-model="resourceForm.title" placeholder="单文件上传时可自定义标题" />
+        </el-form-item>
         <el-form-item label="分类">
           <el-select v-model="resourceForm.category" filterable allow-create default-first-option placeholder="选择或输入分类">
             <el-option v-for="category in categoryOptions" :key="category" :label="category" :value="category" />
@@ -88,13 +90,16 @@
           <el-upload
             action="#"
             :auto-upload="false"
-            :limit="1"
+            multiple
             :file-list="resourceFileList"
             :on-change="handleResourceFileChange"
             :on-remove="handleResourceFileRemove"
           >
             <el-button :icon="Upload">选择文件</el-button>
           </el-upload>
+          <p v-if="resourceFiles.length > 1" class="resource-upload-note">
+            已选择 {{ resourceFiles.length }} 个文件，将按文件名分别创建资源。
+          </p>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -128,7 +133,7 @@ const loading = ref(false)
 const saving = ref(false)
 const resourceDrawer = ref(false)
 const editingResource = ref<ResourceItem | null>(null)
-const resourceFile = ref<File | null>(null)
+const resourceFiles = ref<File[]>([])
 const resourceFileList = ref<UploadUserFile[]>([])
 const resourceForm = ref({
   title: '',
@@ -154,8 +159,14 @@ const categoryOptions = computed(() => {
   return [...categories]
 })
 const canSaveResource = computed(() => {
-  const hasMetadata = Boolean(resourceForm.value.title.trim() && resourceForm.value.category.trim())
-  return editingResource.value ? hasMetadata : Boolean(hasMetadata && resourceFile.value)
+  const hasCategory = Boolean(resourceForm.value.category.trim())
+  if (editingResource.value) {
+    return Boolean(resourceForm.value.title.trim() && hasCategory)
+  }
+  if (!hasCategory || resourceFiles.value.length === 0) {
+    return false
+  }
+  return resourceFiles.value.length > 1 || Boolean(resourceForm.value.title.trim() || resourceFiles.value[0]?.name)
 })
 
 async function loadResources() {
@@ -201,30 +212,42 @@ function openEditResource(resource: ResourceItem) {
 
 function resetResourceForm() {
   editingResource.value = null
-  resourceFile.value = null
+  resourceFiles.value = []
   resourceFileList.value = []
   resourceForm.value = { title: '', category: '课件', tags: [], status: 1 }
   saving.value = false
 }
 
-function handleResourceFileChange(file: UploadFile) {
-  resourceFileList.value = [file]
-  resourceFile.value = file.raw || null
-  if (!resourceForm.value.title.trim() && file.name) {
+function handleResourceFileChange(file: UploadFile, files: UploadFile[]) {
+  resourceFileList.value = files as UploadUserFile[]
+  resourceFiles.value = rawFiles(files)
+  if (resourceFiles.value.length === 1 && !resourceForm.value.title.trim() && file.name) {
     resourceForm.value.title = file.name
+  }
+  if (resourceFiles.value.length > 1) {
+    resourceForm.value.title = ''
   }
 }
 
-function handleResourceFileRemove() {
-  resourceFile.value = null
-  resourceFileList.value = []
+function handleResourceFileRemove(_file: UploadFile, files: UploadFile[]) {
+  resourceFileList.value = files as UploadUserFile[]
+  resourceFiles.value = rawFiles(files)
+  if (resourceFiles.value.length === 1 && !resourceForm.value.title.trim()) {
+    resourceForm.value.title = resourceFiles.value[0].name
+  }
 }
 
-function resourcePayload(fileId?: number) {
+function rawFiles(files: UploadFile[]) {
+  return files
+    .map((item) => item.raw)
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+}
+
+function resourcePayload(fileId?: number, title?: string) {
   return {
     courseId: currentCourseId.value,
     fileId,
-    title: resourceForm.value.title.trim(),
+    title: title || resourceForm.value.title.trim(),
     category: resourceForm.value.category.trim(),
     tags: joinTags(resourceForm.value.tags),
     uploaderId: appState.session.userId,
@@ -239,10 +262,15 @@ async function saveResource() {
       await courseService.updateResource(editingResource.value.id, resourcePayload(editingResource.value.fileId))
       ElMessage.success('资源信息已更新')
     } else {
-      if (!resourceFile.value) return
-      const file = await fileService.upload(resourceFile.value, appState.session.userId, 'resource')
-      await courseService.createResource(resourcePayload(file.id))
-      ElMessage.success('资源已上传')
+      if (!resourceFiles.value.length) return
+      for (const resourceFile of resourceFiles.value) {
+        const file = await fileService.upload(resourceFile, appState.session.userId, 'resource')
+        const title = resourceFiles.value.length === 1
+          ? resourceForm.value.title.trim() || resourceFile.name
+          : resourceFile.name
+        await courseService.createResource(resourcePayload(file.id, title))
+      }
+      ElMessage.success(resourceFiles.value.length === 1 ? '资源已上传' : `已上传 ${resourceFiles.value.length} 份资源`)
     }
     resourceDrawer.value = false
     await loadResourcePage()
@@ -276,3 +304,12 @@ watch(currentCourseId, async () => {
 })
 watch(refreshSignal, loadResourcePage)
 </script>
+
+<style scoped>
+.resource-upload-note {
+  margin: 8px 0 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+</style>

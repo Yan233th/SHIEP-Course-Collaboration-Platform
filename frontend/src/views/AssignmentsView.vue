@@ -36,7 +36,7 @@
           <el-table-column prop="totalScore" label="总分" width="78" />
           <el-table-column label="操作" width="230" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" text @click.stop="selectAssignment(row.id)">查看</el-button>
+              <el-button size="small" text @click.stop="openAssignmentDetailDrawer(row)">内容</el-button>
               <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click.stop="openEditAssignmentDrawer(row)">编辑</el-button>
               <el-button
                 v-if="canManageAssignment"
@@ -61,10 +61,11 @@
           <section class="assignment-detail">
             <div class="assignment-detail-head">
               <div>
-                <span>作业内容</span>
+                <span>当前作业</span>
                 <strong>{{ selectedAssignment.title }}</strong>
               </div>
               <div class="assignment-detail-actions">
+                <el-button size="small" text @click="assignmentDetailDrawer = true">内容</el-button>
                 <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click="openEditAssignmentDrawer(selectedAssignment)">编辑</el-button>
                 <el-button
                   v-if="canManageAssignment"
@@ -80,9 +81,7 @@
                 <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
               </div>
             </div>
-            <p class="assignment-description">{{ selectedAssignment.description || '暂无说明' }}</p>
-            <FileActions v-if="selectedAssignment.fileId" :file-id="selectedAssignment.fileId" :file="selectedAssignment.file" />
-            <dl>
+            <dl class="assignment-context-meta">
               <div>
                 <dt>截止时间</dt>
                 <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
@@ -90,6 +89,10 @@
               <div>
                 <dt>总分</dt>
                 <dd>{{ selectedAssignment.totalScore }}</dd>
+              </div>
+              <div>
+                <dt>附件</dt>
+                <dd>{{ selectedAssignment.fileId ? '有附件' : '无附件' }}</dd>
               </div>
             </dl>
           </section>
@@ -133,6 +136,34 @@
         </template>
       </aside>
     </div>
+
+    <WorkspaceDrawer v-model="assignmentDetailDrawer" title="作业内容" size="520px">
+      <article v-if="selectedAssignment" class="assignment-content-drawer">
+        <header>
+          <span>作业说明</span>
+          <h3>{{ selectedAssignment.title }}</h3>
+        </header>
+        <dl class="assignment-content-meta">
+          <div>
+            <dt>截止时间</dt>
+            <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
+          </div>
+          <div>
+            <dt>总分</dt>
+            <dd>{{ selectedAssignment.totalScore }}</dd>
+          </div>
+        </dl>
+        <section class="assignment-content-section">
+          <h4>说明</h4>
+          <p>{{ selectedAssignment.description || '暂无说明' }}</p>
+        </section>
+        <section class="assignment-content-section">
+          <h4>附件</h4>
+          <FileActions v-if="selectedAssignment.fileId" :file-id="selectedAssignment.fileId" :file="selectedAssignment.file" />
+          <span v-else class="muted">无附件</span>
+        </section>
+      </article>
+    </WorkspaceDrawer>
 
     <WorkspaceDrawer v-model="assignmentDrawer" :title="assignmentDrawerTitle" @closed="resetAssignmentForm">
       <el-form :model="assignmentForm" label-position="top" class="drawer-form">
@@ -236,6 +267,7 @@ const submissions = ref<Submission[]>([])
 const selectedAssignmentId = ref<number | undefined>(undefined)
 const selectedSubmission = ref<Submission | null>(null)
 const editingAssignment = ref<Assignment | null>(null)
+const assignmentDetailDrawer = ref(false)
 const assignmentDrawer = ref(false)
 const submissionDrawer = ref(false)
 const gradeDrawer = ref(false)
@@ -311,6 +343,13 @@ async function selectAssignment(assignmentId: number) {
   selectedAssignmentId.value = assignmentId
   selectedSubmission.value = null
   await loadSubmissions()
+}
+
+async function openAssignmentDetailDrawer(assignment: Assignment) {
+  if (selectedAssignmentId.value !== assignment.id) {
+    await selectAssignment(assignment.id)
+  }
+  assignmentDetailDrawer.value = true
 }
 
 function assignmentRowClassName({ row }: { row: Assignment }) {
@@ -447,6 +486,7 @@ async function deleteAssignment(assignment: Assignment) {
     if (selectedAssignmentId.value === assignment.id) {
       selectedAssignmentId.value = undefined
       selectedSubmission.value = null
+      assignmentDetailDrawer.value = false
       submissions.value = []
     }
     await loadAssignments()
@@ -504,6 +544,7 @@ async function gradeSubmission() {
 
 onMounted(loadAssignments)
 watch([currentCourseId, refreshSignal], () => {
+  assignmentDetailDrawer.value = false
   assignmentDrawer.value = false
   submissionDrawer.value = false
   gradeDrawer.value = false
@@ -516,10 +557,6 @@ watch([currentCourseId, refreshSignal], () => {
 </script>
 
 <style scoped>
-.assignment-description {
-  white-space: pre-wrap;
-}
-
 .drawer-current-file,
 .grading-preview {
   border: 1px solid var(--app-border);
@@ -558,5 +595,111 @@ watch([currentCourseId, refreshSignal], () => {
   color: var(--app-ink);
   line-height: 1.65;
   white-space: pre-wrap;
+}
+
+.assignment-context-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.assignment-context-meta div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.assignment-context-meta dt,
+.assignment-content-meta dt {
+  margin-bottom: 4px;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assignment-context-meta dd,
+.assignment-content-meta dd {
+  margin: 0;
+  color: var(--app-ink-strong);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.assignment-content-drawer {
+  display: grid;
+  gap: 16px;
+}
+
+.assignment-content-drawer header {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--app-divider);
+}
+
+.assignment-content-drawer header span {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.assignment-content-drawer h3,
+.assignment-content-drawer h4 {
+  margin: 0;
+  color: var(--app-ink-strong);
+}
+
+.assignment-content-drawer h3 {
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.assignment-content-drawer h4 {
+  font-size: 13px;
+}
+
+.assignment-content-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.assignment-content-meta div,
+.assignment-content-section {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+}
+
+.assignment-content-meta div {
+  padding: 10px 12px;
+}
+
+.assignment-content-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.assignment-content-section p {
+  margin: 0;
+  color: var(--app-ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .assignment-context-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .assignment-content-meta {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

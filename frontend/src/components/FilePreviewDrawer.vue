@@ -27,6 +27,19 @@
           </template>
         </div>
 
+        <div v-else-if="previewKind === 'html'" v-loading="textLoading" class="html-preview-pane">
+          <el-alert v-if="textError" type="warning" :closable="false" :title="textError" />
+          <template v-else>
+            <div v-if="textTruncated" class="preview-note">文件较大，当前只渲染前 {{ textLimitText }}。</div>
+            <iframe
+              class="html-preview"
+              sandbox=""
+              :srcdoc="htmlPreviewContent"
+              :title="fileName"
+            />
+          </template>
+        </div>
+
         <div v-else class="unsupported-preview">
           <el-icon><Document /></el-icon>
           <strong>该格式暂不支持内嵌预览</strong>
@@ -52,6 +65,11 @@ import { previewKindForFile } from '../utils/filePreview'
 import type { FileBrief } from '../types'
 
 const TEXT_PREVIEW_LIMIT = 200 * 1024
+const EMPTY_HTML_PREVIEW = [
+  '<!doctype html>',
+  '<meta charset="utf-8">',
+  '<body style="font-family: system-ui, sans-serif; color: #6b7280;">暂无可预览内容</body>'
+].join('')
 
 const props = defineProps<{
   modelValue: boolean
@@ -84,6 +102,7 @@ const textLimitText = computed(() => formatBytes(TEXT_PREVIEW_LIMIT))
 const textContent = computed(() => textState.content)
 const textError = computed(() => textState.error)
 const textTruncated = computed(() => textState.truncated)
+const htmlPreviewContent = computed(() => textState.content || EMPTY_HTML_PREVIEW)
 
 const previewKind = computed(() => previewKindForFile(fileName.value, props.file?.contentType))
 
@@ -93,6 +112,7 @@ const previewKindLabel = computed(() => {
     pdf: 'PDF 预览',
     text: '文本预览',
     markdown: 'Markdown 预览',
+    html: 'HTML 预览',
     unsupported: '附件预览'
   }
   return labels[previewKind.value]
@@ -102,7 +122,7 @@ watch(
   () => [visible.value, props.fileId, previewKind.value] as const,
   () => {
     if (!visible.value || !props.fileId) return
-    if (previewKind.value === 'text' || previewKind.value === 'markdown') {
+    if (previewKind.value === 'text' || previewKind.value === 'markdown' || previewKind.value === 'html') {
       void loadTextPreview()
     }
   },
@@ -218,6 +238,26 @@ function resetTextPreview() {
   gap: 10px;
   padding: 12px;
   place-self: stretch;
+}
+
+.html-preview-pane {
+  width: 100%;
+  height: 68vh;
+  min-height: 500px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  place-self: stretch;
+}
+
+.html-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--app-divider);
+  border-radius: 8px;
+  background: #fff;
 }
 
 .preview-note {

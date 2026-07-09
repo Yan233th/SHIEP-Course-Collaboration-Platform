@@ -30,10 +30,12 @@
       <el-tab-pane label="操作历史" name="history">
         <div class="audit-pane audit-pane-history">
           <el-table :data="auditHistory" height="100%" empty-text="暂无审计记录">
-            <el-table-column prop="create_time" label="时间" width="140">
-              <template #default="{ row }">{{ formatDateTime(row.create_time) }}</template>
+            <el-table-column prop="create_time" label="时间" width="174">
+              <template #default="{ row }">
+                <span class="audit-time">{{ formatDateTime(row.create_time) }}</span>
+              </template>
             </el-table-column>
-            <el-table-column prop="table_name" label="表" min-width="120" show-overflow-tooltip>
+            <el-table-column prop="table_name" label="表" width="98" show-overflow-tooltip>
               <template #default="{ row }">{{ tableLabel(row.table_name) }}</template>
             </el-table-column>
             <el-table-column prop="action_type" label="动作" width="88">
@@ -64,7 +66,9 @@
           </div>
           <el-table :data="fileStatuses" height="100%" empty-text="暂无文件状态">
             <el-table-column prop="original_name" label="文件" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="biz_type" label="类型" width="90" show-overflow-tooltip />
+            <el-table-column prop="biz_type" label="类型" width="118" show-overflow-tooltip>
+              <template #default="{ row }">{{ bizTypeLabel(row.biz_type) }}</template>
+            </el-table-column>
             <el-table-column label="状态" width="106">
               <template #default="{ row }">
                 <el-tag size="small" effect="plain" :type="lifecycleTagType(row.lifecycle_status)">
@@ -193,6 +197,25 @@ function lifecycleLabel(status: string) {
     QUEUE_STATUS_4: '队列失败'
   }
   return labels[status] || status
+}
+
+function bizTypeLabel(type?: string) {
+  const labels: Record<string, string> = {
+    resource: '课程资源',
+    assignment: '作业附件',
+    submission: '提交附件',
+    showcase: '成果附件',
+    avatar: '头像',
+    course_resource: '课程资源'
+  }
+  if (!type) return '-'
+  return type
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => labels[item.toLowerCase()] || item)
+    .filter((item, index, items) => items.indexOf(item) === index)
+    .join('、') || '-'
 }
 
 function lifecycleTagType(status: string) {
@@ -392,6 +415,11 @@ onMounted(loadAll)
   line-height: 1.6;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.audit-time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 1180px) {

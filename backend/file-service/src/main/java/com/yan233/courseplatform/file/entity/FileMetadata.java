@@ -19,6 +19,7 @@ public class FileMetadata {
     private String storageName;
     private String storagePath;
     private String contentType;
+    private String contentHash;
     private Long sizeBytes;
     private Long uploaderId;
     private String bizType;
@@ -30,4 +31,3 @@ public class FileMetadata {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }
-

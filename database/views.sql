@@ -36,7 +36,14 @@ CREATE OR REPLACE VIEW v_file_resource_status AS
 SELECT
   fm.id AS file_id,
   fm.original_name,
-  fm.biz_type,
+  COALESCE(
+    GROUP_CONCAT(
+      DISTINCT CASE WHEN fr.deleted = 0 AND fr.status = 1 THEN fr.owner_type END
+      ORDER BY fr.owner_type
+      SEPARATOR ','
+    ),
+    fm.biz_type
+  ) AS biz_type,
   fm.size_bytes,
   fm.uploader_id,
   fm.deleted AS file_deleted,

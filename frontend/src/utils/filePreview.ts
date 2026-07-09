@@ -1,11 +1,12 @@
-export type FilePreviewKind = 'image' | 'pdf' | 'text' | 'markdown' | 'unsupported'
+export type FilePreviewKind = 'image' | 'pdf' | 'text' | 'markdown' | 'html' | 'unsupported'
 
 const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']
 const markdownExtensions = ['md', 'markdown']
+const htmlExtensions = ['html', 'htm']
 const textExtensions = [
   'txt', 'log', 'csv', 'json', 'xml', 'sql',
   'java', 'vue', 'ts', 'tsx', 'js', 'jsx',
-  'html', 'css', 'yaml', 'yml'
+  'css', 'yaml', 'yml'
 ]
 const officeExtensions = [
   'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
@@ -26,6 +27,9 @@ export function previewKindForFile(fileName?: string, contentType?: string): Fil
   }
   if (markdownExtensions.includes(ext)) {
     return 'markdown'
+  }
+  if (type === 'text/html' || htmlExtensions.includes(ext)) {
+    return 'html'
   }
   if (
     type.startsWith('text/')
