@@ -62,8 +62,8 @@
         <el-form-item label="成果附件">
           <div class="drawer-file-field">
             <div v-if="showcaseForm.fileId" class="drawer-current-file">
-              <FileActions :file-id="showcaseForm.fileId" :file="editingShowcase?.file" />
-              <el-button size="small" text type="danger" @click="removeShowcaseFile">移除</el-button>
+              <FileActions variant="inline" :file-id="showcaseForm.fileId" :file="editingShowcase?.file" />
+              <el-button class="drawer-file-remove" size="small" text type="danger" @click="removeShowcaseFile">移除</el-button>
             </div>
             <el-upload
               action="#"

@@ -1135,6 +1135,36 @@ a {
   font-size: 13px;
 }
 
+.file-actions--inline {
+  flex: 1 1 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.file-actions--inline .file-actions-meta {
+  gap: 8px;
+}
+
+.file-actions--inline .file-actions-meta span {
+  font-weight: 600;
+}
+
+.file-actions--inline .file-actions-buttons {
+  gap: 8px;
+}
+
+.file-actions--inline .el-button,
+.file-actions--inline .el-link,
+.drawer-current-file .drawer-file-remove {
+  height: 24px;
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
 .stats-panel {
   display: flex;
   flex-direction: column;

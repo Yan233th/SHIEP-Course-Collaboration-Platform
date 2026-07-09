@@ -145,8 +145,8 @@
         <el-form-item label="作业附件">
           <div class="drawer-file-field">
             <div v-if="assignmentForm.fileId" class="drawer-current-file">
-              <FileActions :file-id="assignmentForm.fileId" :file="editingAssignment?.file" />
-              <el-button size="small" text type="danger" @click="removeAssignmentFile">移除</el-button>
+              <FileActions variant="inline" :file-id="assignmentForm.fileId" :file="editingAssignment?.file" />
+              <el-button class="drawer-file-remove" size="small" text type="danger" @click="removeAssignmentFile">移除</el-button>
             </div>
             <el-upload
               action="#"
@@ -533,9 +533,9 @@ watch([currentCourseId, refreshSignal], () => {
 }
 
 .drawer-current-file {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
 }

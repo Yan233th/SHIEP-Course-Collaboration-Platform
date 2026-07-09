@@ -1,5 +1,5 @@
 <template>
-  <div v-if="fileId" class="file-actions">
+  <div v-if="fileId" class="file-actions" :class="`file-actions--${variant}`">
     <div class="file-actions-meta">
       <el-icon><Document /></el-icon>
       <span>{{ fileName }}</span>
@@ -20,10 +20,13 @@ import FilePreviewDrawer from './FilePreviewDrawer.vue'
 import { formatBytes } from '../utils/display'
 import type { FileBrief } from '../types'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   fileId?: number
   file?: FileBrief | null
-}>()
+  variant?: 'card' | 'inline'
+}>(), {
+  variant: 'card'
+})
 
 const previewOpen = ref(false)
 const fileName = computed(() => props.file?.originalName || `附件 #${props.fileId}`)
