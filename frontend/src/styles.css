@@ -2522,35 +2522,12 @@ body {
   gap: 16px;
 }
 
-.assignment-workspace {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(460px, 1fr) minmax(360px, 0.75fr);
-  gap: 14px;
-}
-
-.assignment-list-panel,
-.assignment-side-panel {
+.assignment-list-panel {
   min-width: 0;
 }
 
 .assignment-table .el-table__row {
   cursor: pointer;
-}
-
-.assignment-side-panel {
-  display: grid;
-  align-content: start;
-  gap: 14px;
-}
-
-.submissions-section {
-  min-width: 0;
-  padding-top: 2px;
-}
-
-.subsection-heading {
-  margin-top: 2px;
 }
 
 @media (max-width: 1180px) {
@@ -2560,9 +2537,6 @@ body {
     grid-template-columns: 68px minmax(220px, 1fr) 32px;
   }
 
-  .assignment-workspace {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 760px) {

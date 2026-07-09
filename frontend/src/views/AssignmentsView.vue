@@ -13,135 +13,67 @@
       </div>
     </div>
 
-    <div class="assignment-workspace">
-      <section class="assignment-list-panel">
-        <el-table
-          class="assignment-table"
-          :data="assignments"
-          :row-class-name="assignmentRowClassName"
-          height="calc(100vh - 270px)"
-          empty-text="暂无作业"
-          @row-click="selectAssignmentByRow"
-        >
-          <el-table-column prop="title" label="作业" min-width="190" />
-          <el-table-column label="截止时间" width="150">
-            <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
-          </el-table-column>
-          <el-table-column label="附件" width="78">
-            <template #default="{ row }">
-              <el-tag v-if="row.fileId" size="small" effect="plain">有</el-tag>
-              <span v-else class="muted">-</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalScore" label="总分" width="78" />
-          <el-table-column label="操作" width="230" fixed="right">
-            <template #default="{ row }">
-              <el-button size="small" text @click.stop="openAssignmentDetailDrawer(row)">内容</el-button>
-              <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click.stop="openEditAssignmentDrawer(row)">编辑</el-button>
-              <el-button
-                v-if="canManageAssignment"
-                size="small"
-                text
-                type="danger"
-                :icon="Delete"
-                :loading="assignmentDeletingId === row.id"
-                @click.stop="deleteAssignment(row)"
-              >
-                删除
-              </el-button>
-              <el-button v-if="canSubmitAssignment" size="small" type="primary" @click.stop="openSubmissionDrawer(row.id)">提交</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </section>
+    <section class="assignment-list-panel">
+      <el-table
+        class="assignment-table"
+        :data="assignments"
+        :row-class-name="assignmentRowClassName"
+        height="calc(100vh - 270px)"
+        empty-text="暂无作业"
+        @row-click="openAssignmentWorkspaceByRow"
+      >
+        <el-table-column prop="title" label="作业" min-width="240" />
+        <el-table-column label="截止时间" width="170">
+          <template #default="{ row }">{{ formatDueTime(row.dueTime) }}</template>
+        </el-table-column>
+        <el-table-column label="附件" width="78">
+          <template #default="{ row }">
+            <el-tag v-if="row.fileId" size="small" effect="plain">有</el-tag>
+            <span v-else class="muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="totalScore" label="总分" width="78" />
+        <el-table-column label="操作" width="238" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" text @click.stop="openAssignmentWorkspace(row)">详情</el-button>
+            <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click.stop="openEditAssignmentDrawer(row)">编辑</el-button>
+            <el-button
+              v-if="canManageAssignment"
+              size="small"
+              text
+              type="danger"
+              :icon="Delete"
+              :loading="assignmentDeletingId === row.id"
+              @click.stop="deleteAssignment(row)"
+            >
+              删除
+            </el-button>
+            <el-button v-if="canSubmitAssignment" size="small" type="primary" @click.stop="openSubmissionDrawer(row.id)">提交</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </section>
 
-      <aside class="assignment-side-panel">
-        <div v-if="!selectedAssignment" class="empty-inline">选择左侧作业查看详情</div>
-        <template v-else>
-          <section class="assignment-detail">
-            <div class="assignment-detail-head">
-              <div>
-                <span>当前作业</span>
-                <strong>{{ selectedAssignment.title }}</strong>
-              </div>
-              <div class="assignment-detail-actions">
-                <el-button size="small" text @click="assignmentDetailDrawer = true">内容</el-button>
-                <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click="openEditAssignmentDrawer(selectedAssignment)">编辑</el-button>
-                <el-button
-                  v-if="canManageAssignment"
-                  size="small"
-                  text
-                  type="danger"
-                  :icon="Delete"
-                  :loading="assignmentDeletingId === selectedAssignment.id"
-                  @click="deleteAssignment(selectedAssignment)"
-                >
-                  删除
-                </el-button>
-                <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
-              </div>
-            </div>
-            <dl class="assignment-context-meta">
-              <div>
-                <dt>截止时间</dt>
-                <dd>{{ formatDueTime(selectedAssignment.dueTime) }}</dd>
-              </div>
-              <div>
-                <dt>总分</dt>
-                <dd>{{ selectedAssignment.totalScore }}</dd>
-              </div>
-              <div>
-                <dt>附件</dt>
-                <dd>{{ selectedAssignment.fileId ? '有附件' : '无附件' }}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section class="submissions-section">
-            <div class="section-heading compact subsection-heading">
-              <div>
-                <h2>{{ canGradeSubmission ? '提交与批改' : '我的提交' }}</h2>
-                <p>{{ selectedAssignment.title }}</p>
-              </div>
-              <strong>{{ submissions.length }} 条</strong>
-            </div>
-            <el-table :data="submissions" max-height="300px" empty-text="暂无提交">
-              <el-table-column prop="studentId" label="学生ID" width="90" />
-              <el-table-column label="内容" min-width="180">
-                <template #default="{ row }">
-                  <span class="table-ellipsis">{{ row.content || '-' }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="附件" min-width="220">
-                <template #default="{ row }">
-                  <FileActions v-if="row.fileId" :file-id="row.fileId" :file="row.file" />
-                  <span v-else class="muted">-</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="成绩" width="82">
-                <template #default="{ row }">{{ row.score ?? '-' }}</template>
-              </el-table-column>
-              <el-table-column label="状态" width="90">
-                <template #default="{ row }">
-                  <el-tag effect="plain" :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已批改' : '已提交' }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column v-if="canGradeSubmission" label="操作" width="90">
-                <template #default="{ row }">
-                  <el-button size="small" @click="selectSubmission(row)">批改</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </section>
-        </template>
-      </aside>
-    </div>
-
-    <WorkspaceDrawer v-model="assignmentDetailDrawer" title="作业内容" size="520px">
-      <article v-if="selectedAssignment" class="assignment-content-drawer">
+    <WorkspaceDrawer v-model="assignmentWorkspaceDrawer" title="作业详情" size="min(820px, calc(100vw - 28px))">
+      <article v-if="selectedAssignment" class="assignment-content-drawer assignment-workspace-drawer">
         <header>
           <span>作业说明</span>
           <h3>{{ selectedAssignment.title }}</h3>
+          <div class="assignment-detail-actions">
+            <el-button v-if="canManageAssignment" size="small" text :icon="Edit" @click="openEditAssignmentDrawer(selectedAssignment)">编辑</el-button>
+            <el-button
+              v-if="canManageAssignment"
+              size="small"
+              text
+              type="danger"
+              :icon="Delete"
+              :loading="assignmentDeletingId === selectedAssignment.id"
+              @click="deleteAssignment(selectedAssignment)"
+            >
+              删除
+            </el-button>
+            <el-button v-if="canSubmitAssignment" size="small" type="primary" @click="openSubmissionDrawer(selectedAssignment.id)">提交</el-button>
+          </div>
         </header>
         <dl class="assignment-content-meta">
           <div>
@@ -152,6 +84,10 @@
             <dt>总分</dt>
             <dd>{{ selectedAssignment.totalScore }}</dd>
           </div>
+          <div>
+            <dt>附件</dt>
+            <dd>{{ selectedAssignment.fileId ? '有附件' : '无附件' }}</dd>
+          </div>
         </dl>
         <section class="assignment-content-section">
           <h4>说明</h4>
@@ -161,6 +97,42 @@
           <h4>附件</h4>
           <FileActions v-if="selectedAssignment.fileId" :file-id="selectedAssignment.fileId" :file="selectedAssignment.file" />
           <span v-else class="muted">无附件</span>
+        </section>
+
+        <section class="assignment-content-section submissions-section">
+          <div class="submissions-head">
+            <div>
+              <h4>{{ canGradeSubmission ? '提交与批改' : '我的提交' }}</h4>
+              <p>{{ submissions.length }} 条记录</p>
+            </div>
+          </div>
+          <el-table :data="submissions" max-height="320px" empty-text="暂无提交">
+            <el-table-column prop="studentId" label="学生ID" width="90" />
+            <el-table-column label="内容" min-width="180">
+              <template #default="{ row }">
+                <span class="table-ellipsis">{{ row.content || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="附件" min-width="220">
+              <template #default="{ row }">
+                <FileActions v-if="row.fileId" :file-id="row.fileId" :file="row.file" />
+                <span v-else class="muted">-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="成绩" width="82">
+              <template #default="{ row }">{{ row.score ?? '-' }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag effect="plain" :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '已批改' : '已提交' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column v-if="canGradeSubmission" label="操作" width="90">
+              <template #default="{ row }">
+                <el-button size="small" @click="selectSubmission(row)">批改</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </section>
       </article>
     </WorkspaceDrawer>
@@ -267,7 +239,7 @@ const submissions = ref<Submission[]>([])
 const selectedAssignmentId = ref<number | undefined>(undefined)
 const selectedSubmission = ref<Submission | null>(null)
 const editingAssignment = ref<Assignment | null>(null)
-const assignmentDetailDrawer = ref(false)
+const assignmentWorkspaceDrawer = ref(false)
 const assignmentDrawer = ref(false)
 const submissionDrawer = ref(false)
 const gradeDrawer = ref(false)
@@ -315,11 +287,9 @@ async function loadAssignments() {
   loading.value = true
   try {
     assignments.value = await courseService.getAssignments(currentCourseId.value)
-    if (assignments.value.length && !assignments.value.some((assignment) => assignment.id === selectedAssignmentId.value)) {
-      selectedAssignmentId.value = assignments.value[0].id
-    }
-    if (!assignments.value.length) {
+    if (!assignments.value.some((assignment) => assignment.id === selectedAssignmentId.value)) {
       selectedAssignmentId.value = undefined
+      assignmentWorkspaceDrawer.value = false
     }
     await loadSubmissions()
   } finally {
@@ -335,8 +305,8 @@ async function loadSubmissions() {
   submissions.value = await courseService.getSubmissions(selectedAssignmentId.value)
 }
 
-function selectAssignmentByRow(row: Assignment) {
-  void selectAssignment(row.id)
+function openAssignmentWorkspaceByRow(row: Assignment) {
+  void openAssignmentWorkspace(row)
 }
 
 async function selectAssignment(assignmentId: number) {
@@ -345,11 +315,11 @@ async function selectAssignment(assignmentId: number) {
   await loadSubmissions()
 }
 
-async function openAssignmentDetailDrawer(assignment: Assignment) {
+async function openAssignmentWorkspace(assignment: Assignment) {
   if (selectedAssignmentId.value !== assignment.id) {
     await selectAssignment(assignment.id)
   }
-  assignmentDetailDrawer.value = true
+  assignmentWorkspaceDrawer.value = true
 }
 
 function assignmentRowClassName({ row }: { row: Assignment }) {
@@ -404,6 +374,7 @@ function removeAssignmentFile() {
 }
 
 function openSubmissionDrawer(assignmentId: number) {
+  selectedAssignmentId.value = assignmentId
   submissionForm.assignmentId = assignmentId
   submissionForm.fileId = undefined
   submissionForm.content = ''
@@ -486,7 +457,7 @@ async function deleteAssignment(assignment: Assignment) {
     if (selectedAssignmentId.value === assignment.id) {
       selectedAssignmentId.value = undefined
       selectedSubmission.value = null
-      assignmentDetailDrawer.value = false
+      assignmentWorkspaceDrawer.value = false
       submissions.value = []
     }
     await loadAssignments()
@@ -544,7 +515,7 @@ async function gradeSubmission() {
 
 onMounted(loadAssignments)
 watch([currentCourseId, refreshSignal], () => {
-  assignmentDetailDrawer.value = false
+  assignmentWorkspaceDrawer.value = false
   assignmentDrawer.value = false
   submissionDrawer.value = false
   gradeDrawer.value = false
@@ -597,22 +568,6 @@ watch([currentCourseId, refreshSignal], () => {
   white-space: pre-wrap;
 }
 
-.assignment-context-meta {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0;
-}
-
-.assignment-context-meta div {
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-surface-soft);
-}
-
-.assignment-context-meta dt,
 .assignment-content-meta dt {
   margin-bottom: 4px;
   color: var(--app-muted);
@@ -620,7 +575,6 @@ watch([currentCourseId, refreshSignal], () => {
   font-weight: 600;
 }
 
-.assignment-context-meta dd,
 .assignment-content-meta dd {
   margin: 0;
   color: var(--app-ink-strong);
@@ -662,9 +616,24 @@ watch([currentCourseId, refreshSignal], () => {
   font-size: 13px;
 }
 
+.assignment-workspace-drawer header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.assignment-workspace-drawer header span,
+.assignment-workspace-drawer header h3 {
+  grid-column: 1;
+}
+
+.assignment-workspace-drawer .assignment-detail-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
 .assignment-content-meta {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }
@@ -693,13 +662,32 @@ watch([currentCourseId, refreshSignal], () => {
   white-space: pre-wrap;
 }
 
+.submissions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.submissions-head p {
+  margin: 4px 0 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 @media (max-width: 760px) {
-  .assignment-context-meta {
+  .assignment-content-meta {
     grid-template-columns: 1fr;
   }
 
-  .assignment-content-meta {
+  .assignment-workspace-drawer header {
     grid-template-columns: 1fr;
+  }
+
+  .assignment-workspace-drawer .assignment-detail-actions {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
 </style>
