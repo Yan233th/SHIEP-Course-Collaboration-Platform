@@ -48,6 +48,7 @@ import { Document } from '@element-plus/icons-vue'
 import WorkspaceDrawer from './WorkspaceDrawer.vue'
 import { TOKEN_KEY } from '../state/appState'
 import { formatBytes } from '../utils/display'
+import { previewKindForFile } from '../utils/filePreview'
 import type { FileBrief } from '../types'
 
 const TEXT_PREVIEW_LIMIT = 200 * 1024
@@ -76,12 +77,6 @@ const visible = computed({
 })
 
 const fileName = computed(() => props.file?.originalName || `附件 #${props.fileId}`)
-const contentType = computed(() => (props.file?.contentType || '').toLowerCase())
-const extension = computed(() => {
-  const name = fileName.value.toLowerCase()
-  const dot = name.lastIndexOf('.')
-  return dot >= 0 ? name.slice(dot + 1) : ''
-})
 const previewUrl = computed(() => props.file?.previewUrl || `/api/files/preview/${props.fileId}`)
 const downloadUrl = computed(() => props.fileId ? `/api/files/download/${props.fileId}` : '')
 const sizeText = computed(() => props.file?.sizeBytes == null ? '' : formatBytes(props.file.sizeBytes))
@@ -90,29 +85,7 @@ const textContent = computed(() => textState.content)
 const textError = computed(() => textState.error)
 const textTruncated = computed(() => textState.truncated)
 
-const previewKind = computed(() => {
-  const type = contentType.value
-  const ext = extension.value
-  if (type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
-    return 'image'
-  }
-  if (type === 'application/pdf' || ext === 'pdf') {
-    return 'pdf'
-  }
-  if (['md', 'markdown'].includes(ext)) {
-    return 'markdown'
-  }
-  if (
-    type.startsWith('text/')
-    || type.includes('json')
-    || type.includes('xml')
-    || type.includes('javascript')
-    || ['txt', 'log', 'csv', 'json', 'xml', 'sql', 'java', 'vue', 'ts', 'tsx', 'js', 'jsx', 'html', 'css', 'yaml', 'yml'].includes(ext)
-  ) {
-    return 'text'
-  }
-  return 'unsupported'
-})
+const previewKind = computed(() => previewKindForFile(fileName.value, props.file?.contentType))
 
 const previewKindLabel = computed(() => {
   const labels: Record<string, string> = {
