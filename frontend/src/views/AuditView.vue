@@ -68,8 +68,8 @@
             <el-table-column prop="original_name" label="文件名(首次)" width="360" />
             <el-table-column label="SHA-256" width="188">
               <template #default="{ row }">
-                <el-tooltip :content="row.content_hash || '-'" placement="top" :disabled="!row.content_hash">
-                  <code class="hash-text">{{ shortHash(row.content_hash) }}</code>
+                <el-tooltip :content="displayHash(row) || '-'" placement="top" :disabled="!displayHash(row)">
+                  <code class="hash-text">{{ shortHash(displayHash(row)) }}</code>
                 </el-tooltip>
               </template>
             </el-table-column>
@@ -223,6 +223,10 @@ function bizTypeLabel(type?: string) {
     .map((item) => labels[item.toLowerCase()] || item)
     .filter((item, index, items) => items.indexOf(item) === index)
     .join('、') || '-'
+}
+
+function displayHash(row: FileResourceStatus) {
+  return row.lifecycle_status === 'DELETED' ? null : row.content_hash
 }
 
 function shortHash(hash?: string | null) {
