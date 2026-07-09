@@ -392,6 +392,10 @@ onMounted(loadAll)
   margin-bottom: 12px;
 }
 
+.audit-tabs :deep(.el-tabs__nav-scroll) {
+  padding-left: 22px;
+}
+
 .audit-tabs :deep(.el-tabs__content),
 .audit-tabs :deep(.el-tab-pane) {
   height: 100%;
