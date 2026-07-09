@@ -209,7 +209,7 @@ function lifecycleLabel(status: string) {
     DELETED: '已释放',
     QUEUE_STATUS_0: '队列待处理',
     QUEUE_STATUS_1: '队列处理中',
-    QUEUE_STATUS_2: '队列已释放',
+    QUEUE_STATUS_2: '回收完成',
     QUEUE_STATUS_3: '仍被引用',
     QUEUE_STATUS_4: '队列失败'
   }
