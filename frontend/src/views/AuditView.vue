@@ -28,53 +28,57 @@
 
     <el-tabs v-model="activeTab" class="audit-tabs">
       <el-tab-pane label="操作历史" name="history">
-        <el-table :data="auditHistory" height="420" empty-text="暂无审计记录">
-          <el-table-column prop="create_time" label="时间" width="150">
-            <template #default="{ row }">{{ formatDateTime(row.create_time) }}</template>
-          </el-table-column>
-          <el-table-column prop="table_name" label="表" width="180">
-            <template #default="{ row }">{{ tableLabel(row.table_name) }}</template>
-          </el-table-column>
-          <el-table-column prop="action_type" label="动作" width="110">
-            <template #default="{ row }">
-              <el-tag size="small" effect="plain" :type="actionTagType(row.action_type)">
-                {{ actionLabel(row.action_type) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="record_id" label="记录 ID" width="100" />
-          <el-table-column label="快照" min-width="300">
-            <template #default="{ row }">
-              <code class="snapshot-text">{{ snapshotText(row.snapshot) }}</code>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="audit-pane audit-pane-history">
+          <el-table :data="auditHistory" height="456" empty-text="暂无审计记录">
+            <el-table-column prop="create_time" label="时间" width="150">
+              <template #default="{ row }">{{ formatDateTime(row.create_time) }}</template>
+            </el-table-column>
+            <el-table-column prop="table_name" label="表" width="180">
+              <template #default="{ row }">{{ tableLabel(row.table_name) }}</template>
+            </el-table-column>
+            <el-table-column prop="action_type" label="动作" width="110">
+              <template #default="{ row }">
+                <el-tag size="small" effect="plain" :type="actionTagType(row.action_type)">
+                  {{ actionLabel(row.action_type) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="record_id" label="记录 ID" width="100" />
+            <el-table-column label="快照" min-width="300">
+              <template #default="{ row }">
+                <code class="snapshot-text">{{ snapshotText(row.snapshot) }}</code>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
       <el-tab-pane label="文件生命周期" name="files">
-        <div class="file-gc-summary">
-          <article v-for="item in fileGcStats" :key="item.lifecycle_status" class="gc-chip">
-            <span>{{ lifecycleLabel(item.lifecycle_status) }}</span>
-            <strong>{{ item.file_count }}</strong>
-            <small>{{ formatBytes(Number(item.total_size_bytes || 0)) }}</small>
-          </article>
+        <div class="audit-pane audit-pane-files">
+          <div class="file-gc-summary">
+            <article v-for="item in fileGcStats" :key="item.lifecycle_status" class="gc-chip">
+              <span>{{ lifecycleLabel(item.lifecycle_status) }}</span>
+              <strong>{{ item.file_count }}</strong>
+              <small>{{ formatBytes(Number(item.total_size_bytes || 0)) }}</small>
+            </article>
+          </div>
+          <el-table :data="fileStatuses" height="360" empty-text="暂无文件状态">
+            <el-table-column prop="original_name" label="文件" min-width="220" />
+            <el-table-column prop="biz_type" label="类型" width="120" />
+            <el-table-column label="状态" width="130">
+              <template #default="{ row }">
+                <el-tag size="small" effect="plain" :type="lifecycleTagType(row.lifecycle_status)">
+                  {{ lifecycleLabel(row.lifecycle_status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="active_reference_count" label="有效引用" width="100" />
+            <el-table-column prop="pending_gc_count" label="待回收" width="100" />
+            <el-table-column label="大小" width="110">
+              <template #default="{ row }">{{ formatBytes(Number(row.size_bytes || 0)) }}</template>
+            </el-table-column>
+          </el-table>
         </div>
-        <el-table :data="fileStatuses" height="340" empty-text="暂无文件状态">
-          <el-table-column prop="original_name" label="文件" min-width="220" />
-          <el-table-column prop="biz_type" label="类型" width="120" />
-          <el-table-column label="状态" width="130">
-            <template #default="{ row }">
-              <el-tag size="small" effect="plain" :type="lifecycleTagType(row.lifecycle_status)">
-                {{ lifecycleLabel(row.lifecycle_status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="active_reference_count" label="有效引用" width="100" />
-          <el-table-column prop="pending_gc_count" label="待回收" width="100" />
-          <el-table-column label="大小" width="110">
-            <template #default="{ row }">{{ formatBytes(Number(row.size_bytes || 0)) }}</template>
-          </el-table-column>
-        </el-table>
       </el-tab-pane>
     </el-tabs>
   </section>
@@ -294,6 +298,33 @@ onMounted(loadAll)
 
 .audit-tabs {
   min-height: 0;
+}
+
+.audit-pane {
+  height: 456px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.audit-pane-files {
+  display: grid;
+  grid-template-rows: 86px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.audit-pane-files .file-gc-summary {
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.audit-pane-files .gc-chip {
+  flex: 1 0 126px;
+  min-height: 0;
+  padding: 10px 12px;
 }
 
 .snapshot-text {
