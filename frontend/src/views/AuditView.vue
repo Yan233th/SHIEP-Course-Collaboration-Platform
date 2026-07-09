@@ -223,17 +223,23 @@ onMounted(loadAll)
 }
 
 .audit-console-head {
-  min-height: 112px;
+  min-height: 78px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 18px;
+  gap: 14px;
+  padding: 13px 15px;
   border: 1px solid rgb(25 33 38 / 16%);
   border-radius: 8px;
   color: var(--app-on-dark);
   background:
     linear-gradient(135deg, #151c1f 0%, #263036 56%, #3b2d42 100%);
+}
+
+.audit-console-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
 }
 
 .audit-console-head span {
@@ -244,16 +250,17 @@ onMounted(loadAll)
 }
 
 .audit-console-head h2 {
-  margin: 5px 0 0;
+  margin: 0;
   color: var(--app-on-dark-strong);
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.2;
 }
 
 .audit-console-head p {
-  margin: 7px 0 0;
+  margin: 0;
   color: var(--app-on-dark-muted);
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .audit-console-head strong {
@@ -264,13 +271,25 @@ onMounted(loadAll)
 
 .audit-toolbar {
   display: grid;
-  grid-template-columns: 150px 130px 110px 130px auto auto;
-  gap: 10px;
+  grid-template-columns: 142px 122px 104px 124px max-content max-content;
+  gap: 8px;
   align-items: center;
-  padding: 10px;
+  padding: 6px 8px;
   border: 1px solid var(--app-border);
   border-radius: 8px;
   background: var(--app-surface-soft);
+}
+
+.audit-toolbar :deep(.el-select),
+.audit-toolbar :deep(.el-input) {
+  width: 100%;
+}
+
+.audit-toolbar :deep(.el-select__wrapper),
+.audit-toolbar :deep(.el-input__wrapper),
+.audit-toolbar :deep(.el-button) {
+  min-height: 32px;
+  height: 32px;
 }
 
 .audit-tabs {
