@@ -1,5 +1,6 @@
 package com.yan233.courseplatform.file;
 
+import com.yan233.courseplatform.common.runtime.LocalRuntimeState;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = "com.yan233.courseplatform")
 public class FileServiceApplication {
     public static void main(String[] args) {
+        LocalRuntimeState.configure("file-service");
         SpringApplication.run(FileServiceApplication.class, args);
     }
 }

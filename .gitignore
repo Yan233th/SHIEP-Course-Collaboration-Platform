@@ -10,6 +10,7 @@ dist/
 
 uploads/
 logs/
+.runtime/
 *.log
 
 .env
