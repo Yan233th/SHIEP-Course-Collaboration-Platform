@@ -1,10 +1,13 @@
 # Course Collaboration Platform
 
-A role-aware course workspace built for a combined JavaEE and database systems project at Shanghai University of Electric Power (SHIEP). The platform brings course administration, teaching content, assignments, project collaboration, and operational audit data into one application.
+> [!NOTE]
+> This repository is an archived coursework project. It is kept runnable for inspection and reproduction, but it is not maintained as a production service or starter template.
+
+A role-aware course workspace built for a combined JavaEE and database systems project at Shanghai University of Electric Power (SHIEP). It brings course administration, teaching content, assignments, project collaboration, and operational audit data into one application.
 
 The repository contains a Vue frontend, a Spring Cloud backend split into four domain services, a gateway, and a MySQL-first data layer. Local development keeps infrastructure in Docker while running Java services directly through Maven, which avoids rebuilding backend images during normal iteration.
 
-## Features
+## Project Scope
 
 - Course workspaces with members, notices, categorized resources, and tags
 - Assignment publishing, attachment handling, submissions, resubmissions, grading, and feedback
@@ -22,7 +25,7 @@ System identity and course identity are evaluated separately. A user's global ro
 
 For example, the seeded `ta1` account is a teaching assistant in the JavaEE course but a student in the database course. The frontend refreshes the available actions whenever the active course changes, and the backend performs the same checks before executing protected operations.
 
-| Course role | Typical access |
+| Role or context | Typical access |
 | --- | --- |
 | Teacher | Manage course settings and members; publish and grade course content |
 | Teaching assistant | Publish notices, resources, and assignments; grade work; manage project collaboration |
@@ -112,6 +115,13 @@ database/data.sql
 
 ## Local Development
 
+Two execution modes are kept in the archive:
+
+| Mode | Infrastructure | Application processes | Intended use |
+| --- | --- | --- | --- |
+| Local development | Docker | Maven and Bun in an isolated tmux server | Faster inspection and debugging |
+| Full container deployment | Docker | Containers built by Docker Compose | Reproducing the packaged deployment |
+
 ### Prerequisites
 
 - JDK 17
@@ -126,10 +136,14 @@ database/data.sql
 ```bash
 git clone https://github.com/Yan233th/SHIEP-Course-Collaboration-Platform.git
 cd SHIEP-Course-Collaboration-Platform
+
+# First clone only: install the parent POM and shared module locally.
+mvn -q -f backend/pom.xml -pl common -am -DskipTests install
+
 ./scripts/local-dev.sh
 ```
 
-The script starts MySQL, Redis, Nacos, and Zipkin in Docker. Backend services run directly with `mvn spring-boot:run`, and the frontend runs with Bun and Vite. Each process is placed in an isolated tmux server.
+The Maven bootstrap is required because local development starts each service module independently. The startup script then runs MySQL, Redis, Nacos, and Zipkin in Docker. Backend services use `mvn spring-boot:run`, while the frontend uses Bun and Vite; each process is placed in an isolated tmux server.
 
 | Endpoint | Address |
 | --- | --- |
@@ -172,7 +186,7 @@ All seeded accounts use the password `123456`.
 | `student1` | Student | Student in JavaEE and database design |
 | `student2` | Student | Student in JavaEE |
 
-These accounts are demonstration data and should not be used in a public deployment.
+These accounts, the MySQL password, and the default JWT secret are deterministic archive fixtures. They are suitable for local reproduction only.
 
 ### Inspect MySQL
 
@@ -192,7 +206,7 @@ SELECT * FROM v_file_resource_status;
 
 ## Full Container Deployment
 
-The complete stack can also run through Docker Compose:
+The complete stack can run through Docker Compose without a host JDK, Maven, or Bun installation:
 
 ```bash
 docker compose -p course-collab -f deploy/docker-compose.yml up --build
